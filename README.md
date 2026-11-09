@@ -51,6 +51,12 @@ When selected, the script performs a one-time refresh, scrolls to the listing co
 
 ## Installation
 
+### Install from Greasy Fork
+
+The easiest option is to open the script's [Greasy Fork page](https://greasyfork.org/en/scripts/604578-emoji-gg-universal-full-page-loader) and select **Install this script**.
+
+### Install directly from GitHub
+
 1. Install [Tampermonkey](https://www.tampermonkey.net/) or another compatible userscript manager.
 2. Open the [raw userscript](https://raw.githubusercontent.com/itschase/emoji-gg-universal-full-page-loader/main/emoji-gg-universal-full-page-loader.user.js).
 3. Accept the userscript manager's installation prompt.
