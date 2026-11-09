@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Universal Full Page Loader
 // @namespace    emoji.gg.full-page-loader
-// @version      1.1
+// @version      1.2
 // @description  Fast-loads complete Emoji.gg profiles and adds an opt-in full-page loader to emoji and sticker listings.
 // @author       Chase (itschase)
 // @license      MIT
@@ -26,6 +26,7 @@
   const END_CHECK_WAIT_MS = 1400;
   const PROFILE_TARGET_CHECKS = 8;
   const PROFILE_TARGET_WAIT_MS = 2200;
+  const PROFILE_MAX_STALLED_LOAD_MORE_ATTEMPTS = 40;
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
@@ -118,8 +119,14 @@
     message.innerHTML = html;
   };
 
+  const findLoadMore = () => [...document.querySelectorAll('a.btn, button.btn')]
+    .find(element => element.textContent.trim().toLowerCase() === 'load more'
+      && !element.disabled
+      && element.getAttribute('aria-disabled') !== 'true');
+
   const verifyTrueEnd = async () => {
     let stableChecks = 0;
+    let stalledLoadMoreAttempts = 0;
     const expected = getProfileExpectedCount();
     while (!cancelled) {
       const before = countCards();
@@ -129,24 +136,36 @@
       setMessage(`Checking the bottom for more items… (${stableChecks + 1}/${requiredChecks}; ${before} loaded${target})`);
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
       window.dispatchEvent(new Event('scroll'));
-      const loadMore = [...document.querySelectorAll('a.btn, button.btn')]
-        .find(element => element.textContent.trim().toLowerCase() === 'load more'
-          && !element.disabled
-          && element.getAttribute('aria-disabled') !== 'true');
-      loadMore?.click();
+      const loadMore = findLoadMore();
+      if (loadMore) {
+        loadMore.scrollIntoView({ block: 'center', behavior: 'auto' });
+        loadMore.click();
+        stableChecks = 0;
+      }
       await wait(expected && before < expected ? PROFILE_TARGET_WAIT_MS : END_CHECK_WAIT_MS);
       const removed = removeDuplicateItems();
       const after = countCards();
+      const loadMoreStillAvailable = Boolean(findLoadMore());
       if (after > before) {
         stableChecks = 0;
+        stalledLoadMoreAttempts = 0;
         setMessage(`Found more items (${after}${expected ? ` of ${expected}` : ''} loaded); continuing…`);
+      } else if (loadMoreStillAvailable) {
+        stalledLoadMoreAttempts += 1;
+        stableChecks = 0;
+        if (stalledLoadMoreAttempts >= PROFILE_MAX_STALLED_LOAD_MORE_ATTEMPTS) {
+          setMessage(`Loading paused: Load more is still available after ${stalledLoadMoreAttempts} attempts (${after} loaded). Use Resume / restart to continue.`);
+          return { finished: false, expected, loadMoreStillAvailable: true };
+        }
+        setMessage(`Load more is still available; continuing (${stalledLoadMoreAttempts}/${PROFILE_MAX_STALLED_LOAD_MORE_ATTEMPTS}; ${after}${expected ? ` of ${expected}` : ''} loaded)`);
       } else {
+        stalledLoadMoreAttempts = 0;
         stableChecks += 1;
         const currentRequired = expected && after < expected ? PROFILE_TARGET_CHECKS : END_CHECKS_REQUIRED;
         setMessage(`No new items (${stableChecks}/${currentRequired}; ${after}${expected ? ` of ${expected}` : ''} loaded${removed ? `, ${removed} duplicates removed` : ''})`);
       }
     }
-    return { finished: !cancelled, expected };
+    return { finished: !cancelled && !findLoadMore(), expected };
   };
 
   const profilePageUrl = page => {
@@ -231,10 +250,6 @@
     }
   };
 
-  const findLoadMore = () => [...document.querySelectorAll('a.btn, button.btn')]
-    .find(element => element.textContent.trim().toLowerCase() === 'load more'
-      && !element.disabled
-      && element.getAttribute('aria-disabled') !== 'true');
   const clickNextLoadMore = async () => {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
     window.dispatchEvent(new Event('scroll'));

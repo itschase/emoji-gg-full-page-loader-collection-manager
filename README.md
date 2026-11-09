@@ -22,6 +22,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 - Reads the active profile's Emoji count and uses it as a completion target, with extended verification when the page has not reached that number.
 - Fetches profile pages concurrently in batches of approximately 500 items for substantially faster loading.
 - Performs repeated bottom-of-page checks after the fast pass so late or native lazy-loaded items are not missed.
+- Refuses to report a profile as complete while an actionable **Load more** button remains.
 - Removes duplicate cards introduced when the site's native loader overlaps with the faster loader.
 - Adds an opt-in **Load full page** control to:
   - the Emoji.gg homepage;
@@ -38,7 +39,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 
 ### Profiles
 
-Opening a supported profile starts the fast loader automatically. It requests profile pages concurrently, appends new cards in their original order, and filters duplicate item IDs. The active **Emojis** tab provides the profile's reported total, which the loader uses as a completion target. Once the direct page requests are exhausted, it scrolls to the bottom and waits through multiple verification cycles. If the visible total is still below the reported total, it performs an extended set of slower checks before deciding that Emoji.gg has stopped returning results. This avoids ending early on profiles whose next page appears late while still handling deleted, moderated, or otherwise unavailable items that may remain included in the profile badge.
+Opening a supported profile starts the fast loader automatically. It requests profile pages concurrently, appends new cards in their original order, and filters duplicate item IDs. The active **Emojis** tab provides the profile's reported total, which the loader uses as a completion target. Once the direct page requests are exhausted, it scrolls to the bottom and waits through multiple verification cycles. If an actionable **Load more** button remains, the script keeps activating it and cannot declare the profile complete. If the button remains present but produces no results after a safety limit, loading pauses for manual resume instead of falsely reporting completion or returning to the top. If the visible total is still below the reported total after the button is gone, the script performs an extended set of slower checks before deciding that Emoji.gg has stopped returning results. This avoids ending early on profiles whose next page appears late while still handling deleted, moderated, or otherwise unavailable items that may remain included in the profile badge.
 
 The profile panel provides:
 
@@ -92,6 +93,7 @@ The script targets modern Chromium- and Firefox-based browsers with a current us
 ## Troubleshooting
 
 - If loading pauses after a network error, use **Resume / restart**.
+- If a profile's **Load more** control remains present but stops producing results, use **Resume / restart** to begin another continuation pass.
 - If a listing has changed since the last pass, press **Load full page** again.
 - If Emoji.gg changes its card or pagination markup, please open an issue with the affected URL and browser version.
 
