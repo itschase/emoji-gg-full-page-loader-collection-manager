@@ -19,6 +19,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 ## Features
 
 - Works with any public Emoji.gg profile at `/user/<username>`.
+- Reads the active profile's Emoji count and uses it as a completion target, with extended verification when the page has not reached that number.
 - Fetches profile pages concurrently in batches of approximately 500 items for substantially faster loading.
 - Performs repeated bottom-of-page checks after the fast pass so late or native lazy-loaded items are not missed.
 - Removes duplicate cards introduced when the site's native loader overlaps with the faster loader.
@@ -26,6 +27,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
   - the Emoji.gg homepage;
   - `/emojis` and `/emojis/<tag>` pages;
   - `/stickers` and `/stickers/<tag>` pages.
+  - `/category` and `/category/<name>` pages.
 - Repeatedly finds and activates Emoji.gg's own **Load more** control until the listing stops growing.
 - Lets you pause a running load and start it again later.
 - Returns to the top after a confirmed complete load.
@@ -36,7 +38,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 
 ### Profiles
 
-Opening a supported profile starts the fast loader automatically. It requests profile pages concurrently, appends new cards in their original order, and filters duplicate item IDs. Once the direct page requests are exhausted, it scrolls to the bottom and waits through multiple verification cycles. Only after three consecutive checks find nothing new does it return to the top and report completion.
+Opening a supported profile starts the fast loader automatically. It requests profile pages concurrently, appends new cards in their original order, and filters duplicate item IDs. The active **Emojis** tab provides the profile's reported total, which the loader uses as a completion target. Once the direct page requests are exhausted, it scrolls to the bottom and waits through multiple verification cycles. If the visible total is still below the reported total, it performs an extended set of slower checks before deciding that Emoji.gg has stopped returning results. This avoids ending early on profiles whose next page appears late while still handling deleted, moderated, or otherwise unavailable items that may remain included in the profile badge.
 
 The profile panel provides:
 
@@ -74,6 +76,8 @@ You can also manually create a userscript and paste in the contents of `emoji-gg
 | `/emojis/<tag>` | Displays an opt-in one-time full-page loader for that listing. |
 | `/stickers` | Displays an opt-in one-time full-page loader. |
 | `/stickers/<tag>` | Displays an opt-in one-time full-page loader for that listing. |
+| `/category` | Displays an opt-in one-time full-page loader. |
+| `/category/<name>` | Displays an opt-in one-time full-page loader for that category. |
 
 The script intentionally does nothing on submission, account, marketplace, and unrelated Emoji.gg pages.
 

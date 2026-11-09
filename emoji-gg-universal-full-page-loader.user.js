@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Universal Full Page Loader
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0
+// @version      1.1
 // @description  Fast-loads complete Emoji.gg profiles and adds an opt-in full-page loader to emoji and sticker listings.
 // @author       Chase (itschase)
 // @license      MIT
@@ -24,9 +24,11 @@
   const MAX_CONCURRENT = 10;
   const END_CHECKS_REQUIRED = 3;
   const END_CHECK_WAIT_MS = 1400;
+  const PROFILE_TARGET_CHECKS = 8;
+  const PROFILE_TARGET_WAIT_MS = 2200;
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
-  const isListing = location.pathname === '/' || /^\/(emojis|stickers)(?:\/|$)/.test(location.pathname);
+  const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
   if (!isProfile && !isListing) return;
 
   let running = false;
@@ -36,6 +38,21 @@
   let knownIds = new Set();
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const countCards = () => document.querySelectorAll(CARD_SELECTOR).length;
+  const getProfileExpectedCount = () => {
+    if (!isProfile) return null;
+    const profilePath = location.pathname.replace(/\/$/, '');
+    const emojiTab = [...document.querySelectorAll('a.nav-link')].find(link => {
+      try {
+        return new URL(link.href, location.href).pathname.replace(/\/$/, '') === profilePath
+          && /^\s*Emojis\b/i.test(link.textContent)
+          && Boolean(link.querySelector('.badge'));
+      } catch {
+        return false;
+      }
+    });
+    const value = Number.parseInt(emojiTab?.querySelector('.badge')?.textContent.replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(value) ? value : null;
+  };
 
   const getItemId = item => {
     const collection = item.querySelector('.collection[data-id]');
@@ -89,28 +106,47 @@
   if (isProfile) controls.append(resumeButton);
   panel.append(message, controls);
   document.body.appendChild(panel);
-  const setMessage = text => { message.textContent = text; };
-  const setMessageHtml = html => { message.innerHTML = html; };
+  const ensurePanel = () => {
+    if (!panel.isConnected && document.body) document.body.appendChild(panel);
+  };
+  const setMessage = text => {
+    ensurePanel();
+    message.textContent = text;
+  };
+  const setMessageHtml = html => {
+    ensurePanel();
+    message.innerHTML = html;
+  };
 
   const verifyTrueEnd = async () => {
     let stableChecks = 0;
-    while (!cancelled && stableChecks < END_CHECKS_REQUIRED) {
+    const expected = getProfileExpectedCount();
+    while (!cancelled) {
       const before = countCards();
-      setMessage(`Checking the bottom for more items… (${stableChecks + 1}/${END_CHECKS_REQUIRED})`);
+      const requiredChecks = expected && before < expected ? PROFILE_TARGET_CHECKS : END_CHECKS_REQUIRED;
+      if (stableChecks >= requiredChecks) break;
+      const target = expected ? `; target ${expected}` : '';
+      setMessage(`Checking the bottom for more items… (${stableChecks + 1}/${requiredChecks}; ${before} loaded${target})`);
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
       window.dispatchEvent(new Event('scroll'));
-      await wait(END_CHECK_WAIT_MS);
+      const loadMore = [...document.querySelectorAll('a.btn, button.btn')]
+        .find(element => element.textContent.trim().toLowerCase() === 'load more'
+          && !element.disabled
+          && element.getAttribute('aria-disabled') !== 'true');
+      loadMore?.click();
+      await wait(expected && before < expected ? PROFILE_TARGET_WAIT_MS : END_CHECK_WAIT_MS);
       const removed = removeDuplicateItems();
       const after = countCards();
       if (after > before) {
         stableChecks = 0;
-        setMessage(`Found more items (${after} loaded); continuing…`);
+        setMessage(`Found more items (${after}${expected ? ` of ${expected}` : ''} loaded); continuing…`);
       } else {
         stableChecks += 1;
-        setMessage(`No new items (${stableChecks}/${END_CHECKS_REQUIRED}; ${after} loaded${removed ? `, ${removed} duplicates removed` : ''})`);
+        const currentRequired = expected && after < expected ? PROFILE_TARGET_CHECKS : END_CHECKS_REQUIRED;
+        setMessage(`No new items (${stableChecks}/${currentRequired}; ${after}${expected ? ` of ${expected}` : ''} loaded${removed ? `, ${removed} duplicates removed` : ''})`);
       }
     }
-    return !cancelled;
+    return { finished: !cancelled, expected };
   };
 
   const profilePageUrl = page => {
@@ -173,9 +209,17 @@
     try {
       let result = await loadProfileBurst(nextProfilePage === 2 ? PROFILE_BURST_PAGES : PROFILE_LATER_PAGES);
       while (!cancelled && !result.reachedEnd && result.added > 0) result = await loadProfileBurst(PROFILE_LATER_PAGES);
-      if (!cancelled && await verifyTrueEnd()) {
+      const verification = cancelled ? { finished: false, expected: null } : await verifyTrueEnd();
+      if (verification.finished) {
         window.scrollTo({ top: 0, behavior: 'auto' });
-        setMessage(`Loading complete (${countCards()} loaded)`);
+        await wait(600);
+        removeDuplicateItems();
+        const loaded = countCards();
+        if (verification.expected && loaded < verification.expected) {
+          setMessage(`Loaded all results Emoji.gg made available (${loaded} visible; profile reports ${verification.expected}).`);
+        } else {
+          setMessage(`Loading complete (${loaded}${verification.expected ? ` of ${verification.expected}` : ''} loaded)`);
+        }
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
