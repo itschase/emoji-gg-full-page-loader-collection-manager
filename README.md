@@ -111,6 +111,12 @@ In the GitHub source, both `@updateURL` and `@downloadURL` point directly to the
 
 ### Migration from Universal Full Page Loader
 
+### Greasy Fork source synchronization
+
+The Greasy Fork listing syncs the userscript and this README from the repository. A signed GitHub push webhook notifies Greasy Fork when changes are pushed, so the listing can refresh without a manual sync. Installed userscripts still check for updates according to their manager's settings; code releases should increase `@version`.
+
+### Migration from Universal Full Page Loader
+
 This is **1.0 of the renamed project**, combining the full-page loader and collection manager developed under **Emoji.gg Universal Full Page Loader**.
 
 The old project reached versions above 1.0. A userscript manager may refuse to treat this release as an upgrade or may install it alongside the differently named script. Install this renamed script explicitly and disable or remove the old installation so only one copy runs. Confirm the new update URLs use `emoji-gg-full-page-loader-collection-manager`.
