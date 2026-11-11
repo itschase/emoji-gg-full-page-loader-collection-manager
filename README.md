@@ -4,7 +4,7 @@ Load complete Emoji.gg profiles, emoji searches, and sticker searches without re
 
 I created this userscript because I wanted to browse a profile's full selection of emojis without the delay and practical limitations of Emoji.gg's incremental loading. I also wanted searching for emojis and stickers to be less tedious: one request should be enough to expand the current listing instead of repeatedly scrolling, waiting, and pressing **Load more**.
 
-The script keeps normal browsing lightweight. Profile pages load automatically, while the homepage and emoji or sticker listings only perform a full load when you explicitly request it.
+The script keeps normal browsing lightweight. Profiles, the homepage, and emoji or sticker listings only perform a full load when you explicitly request it.
 
 ## What it looks like
 
@@ -18,7 +18,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 
 ## Features
 
-- Works with any public Emoji.gg profile at `/user/<username>`.
+- Adds an opt-in **Load full profile** control to any public Emoji.gg profile at `/user/<username>`.
 - Reads the active profile's Emoji count for progress context without trusting that potentially stale badge as a loading limit.
 - Loads profiles in continuous 500-item batches by fetching 20 profile pages in parallel.
 - Continues past the reported profile count and stops only after three checks of the next real page return no items.
@@ -38,12 +38,12 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 
 ### Profiles
 
-Opening a supported profile starts the loader automatically. It fetches 20 consecutive profile pages in parallel, merges as many as 500 items into the visible profile, filters duplicate item IDs, and immediately continues with the next batch. The profile badge is displayed only as context because Emoji.gg may not update it immediately after new uploads. The loader therefore continues beyond that number and confirms the actual end by checking the next page three times. If items appear during an end check, batching resumes automatically.
+Opening a supported profile leaves Emoji.gg's normal initial page unchanged until **Load full profile** is selected. The loader then fetches 20 consecutive profile pages in parallel, merges as many as 500 items into the visible profile, filters duplicate item IDs, and immediately continues with the next batch. The profile badge is displayed only as context because Emoji.gg may not update it immediately after new uploads. The loader therefore continues beyond that number and confirms the actual end by checking the next page three times. If items appear during an end check, batching resumes automatically.
 
 The profile panel provides:
 
+- **Load full profile** — starts loading or continues after a pause or recoverable error.
 - **Cancel loading** — pauses the current operation and preserves what has already loaded.
-- **Resume / restart** — continues loading after a pause or recoverable error.
 
 ### Homepage, emoji listings, and sticker listings
 
@@ -72,7 +72,7 @@ The script also has a [Greasy Fork page](https://greasyfork.org/en/scripts/60457
 
 | Page | Behavior |
 | --- | --- |
-| `/user/<username>` | Automatically loads the complete profile and verifies the end. |
+| `/user/<username>` | Displays an opt-in full-profile loader and verifies the real end when selected. |
 | `/` | Displays an opt-in one-time full-page loader. |
 | `/emojis` | Displays an opt-in one-time full-page loader. |
 | `/emojis/<tag>` | Displays an opt-in one-time full-page loader for that listing. |
@@ -93,8 +93,8 @@ The script targets modern Chromium- and Firefox-based browsers with a current us
 
 ## Troubleshooting
 
-- If loading pauses after a network error, use **Resume / restart**.
-- If Emoji.gg temporarily stops responding, use **Resume / restart** to continue from the page after the last completed batch.
+- If loading pauses after a network error, use **Load full profile** again.
+- If Emoji.gg temporarily stops responding, use **Load full profile** to continue from the page after the last completed batch.
 - If a listing has changed since the last pass, press **Load full page** again.
 - If Emoji.gg changes its card or pagination markup, please open an issue with the affected URL and browser version.
 

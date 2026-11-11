@@ -34,6 +34,7 @@
   let abortController = null;
   let knownIds = new Set();
   let nextProfilePage = 1;
+  let profileComplete = false;
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const countCards = () => document.querySelectorAll(CARD_SELECTOR).length;
   const getProfileExpectedCount = () => {
@@ -98,10 +99,8 @@
   message.style.marginBottom = '9px';
   const controls = document.createElement('div');
   Object.assign(controls.style, { display: 'flex', gap: '7px' });
-  const primaryButton = makeButton(isProfile ? 'Cancel loading' : 'Load full page', isProfile ? '#c63c4f' : '#5865f2');
-  const resumeButton = makeButton('Resume / restart', '#5865f2');
+  const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page', '#5865f2');
   controls.append(primaryButton);
-  if (isProfile) controls.append(resumeButton);
   panel.append(message, controls);
   document.body.appendChild(panel);
   const ensurePanel = () => {
@@ -161,6 +160,8 @@
     running = true;
     cancelled = false;
     abortController = new AbortController();
+    primaryButton.textContent = 'Cancel loading';
+    primaryButton.style.background = '#c63c4f';
     rebuildKnownIds();
     try {
       const expected = getProfileExpectedCount();
@@ -189,6 +190,7 @@
       if (!cancelled && emptyChecks >= END_CHECKS_REQUIRED) {
         window.scrollTo({ top: 0, behavior: 'auto' });
         removeDuplicateItems();
+        profileComplete = true;
         setMessage(`Loading complete (${countCards()} visible; three empty page batches confirmed)`);
       }
     } catch (error) {
@@ -198,6 +200,8 @@
       }
     } finally {
       running = false;
+      primaryButton.textContent = 'Load full profile';
+      primaryButton.style.background = '#5865f2';
     }
   };
 
@@ -261,12 +265,19 @@
 
   if (isProfile) {
     primaryButton.addEventListener('click', () => {
-      cancelled = true;
-      abortController?.abort();
-      setMessage(`Cancel load accepted (${countCards()} loaded). Use Resume / restart to continue.`);
+      if (running) {
+        cancelled = true;
+        abortController?.abort();
+        setMessage(`Cancel load accepted (${countCards()} loaded). Click Load full profile to continue.`);
+        return;
+      }
+      if (profileComplete) {
+        nextProfilePage = 1;
+        profileComplete = false;
+      }
+      runProfile();
     });
-    resumeButton.addEventListener('click', runProfile);
-    runProfile();
+    setMessageHtml('Full-profile loading is off.<br>Click to load every profile item.');
     return;
   }
 
