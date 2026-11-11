@@ -6,9 +6,9 @@ This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoj
 
 **Release: 1.0.3 · License: MIT · Author: Chase (itschase)**
 
-[Install from GitHub](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js) · [Source](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
+[Install from Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager) · [Source on GitHub](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
-Also available on [Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager). The previous Greasy Fork listing has been retired with this script selected as its replacement.
+This is a userscript, so it requires the [Tampermonkey browser extension](https://www.tampermonkey.net/) or another compatible userscript manager. Tampermonkey is the recommended option.
 
 ## Why I created it
 
@@ -102,24 +102,33 @@ The script refreshes that cached state before the site's add, remove, and submit
 
 Automatic clearing listens for a confirmed successful `/api/submit/pack` response and uses the IDs actually sent in that request. A button click, timeout, or redirect alone never counts as success. If the request fails, the collection remains. If additional unrelated items were selected while it was pending, those remain for the next pack.
 
-## Installation
+## Requirements and installation
 
-1. Install [Tampermonkey](https://www.tampermonkey.net/) or a compatible userscript manager.
-2. Open the [direct GitHub userscript](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js).
-3. Review the script and accept the manager's installation prompt.
-4. Visit [Emoji.gg](https://emoji.gg/). Loading controls appear on supported pages; collection controls appear after selecting items.
+The script does not run as a standalone browser extension. Install a userscript manager first:
 
-The script runs on `https://emoji.gg/*` with `@grant none`. The repository keeps the existing userscript filename; its title, homepage, support link, and update URLs use the renamed project.
+1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser. Follow Tampermonkey's link to the appropriate Chrome, Edge, Firefox, Safari, or Opera extension store.
+2. Open the [Emoji.gg Full Page Loader & Collection Manager page on Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager).
+3. Select **Install this script**.
+4. Tampermonkey opens an installation screen showing the script's source and permissions. Review it, then select **Install**.
+5. Visit or reload [Emoji.gg](https://emoji.gg/). The compact loader appears on supported profile and listing pages. Collection controls appear after you select an emoji.
 
-### Updates directly from GitHub
+The script runs only on `https://emoji.gg/*`. It uses `@grant none`, adds no external analytics, and works through the page and browser features described in this README.
 
-In the GitHub source, both `@updateURL` and `@downloadURL` point directly to the script in **itschase/emoji-gg-full-page-loader-collection-manager**. GitHub is the intended source for the most recent releases. Your manager controls update-check timing and any source overrides.
+### Using the script
 
-**For updates directly from GitHub, install using the direct GitHub link above.** Greasy Fork rewrites the update and download URLs in the installer it serves, so its standard **Install this script** button uses Greasy Fork's update service instead. This directory behavior cannot be prevented by putting GitHub URLs in the source metadata. If switching an existing installation, reinstall from GitHub and verify its update settings in your manager. After updating, reload existing Emoji.gg tabs once so each tab runs the same version.
+- On a profile, select **Load full profile** to retrieve the available profile pages in large batches.
+- On the homepage, emoji listings, sticker listings, searches, or categories, select **Load full page** to continue activating the site's results until the end is confirmed.
+- Use **Cancel loading** or **Stop full load** to pause without discarding results already loaded. Select the load button again to continue.
+- Add items with Emoji.gg's normal collection button. The widget then shows the count, previews, ZIP export, clear, and pack-submission controls.
+- Use **›** to minimize the widget to the right edge and **‹** to reopen it. The preference is remembered.
 
-### Greasy Fork source synchronization
+### Automatic updates
 
-The Greasy Fork listing syncs the userscript and this README from the repository. A signed GitHub push webhook notifies Greasy Fork when changes are pushed, so the listing can refresh without a manual sync. Installed userscripts still check for updates according to their manager's settings; code releases should increase `@version`.
+Greasy Fork is the recommended installation source. When a new release is pushed to this GitHub repository, a signed GitHub webhook automatically tells Greasy Fork to synchronize the updated userscript and README. Tampermonkey then retrieves the newer Greasy Fork version during its normal automatic update checks. Updates are therefore delivered without reinstalling the script, although the exact check time is controlled by Tampermonkey and may not be immediate.
+
+Each code release increases the userscript's `@version`, allowing Tampermonkey to recognize it as newer. After an update is installed, reload any Emoji.gg tabs that were already open so they begin running the updated version.
+
+Advanced users can instead install the [raw GitHub userscript](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js). That copy uses the repository's direct `@updateURL` and `@downloadURL`; the normal Greasy Fork installer uses Greasy Fork's update service, which is kept current from the same GitHub source.
 
 ### Migration from Universal Full Page Loader
 
