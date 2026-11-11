@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.2
+// @version      1.0.3
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -400,6 +400,28 @@
       && element.getAttribute('aria-disabled') !== 'true'
       && Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
 
+  const setListingSupplementHidden = hidden => {
+    const heading = [...document.querySelectorAll('h3')]
+      .find(element => element.textContent.trim() === 'Popular Categories');
+    const finalInstruction = [...document.querySelectorAll('ol.ps-4 li')]
+      .find(element => element.textContent.trim() === 'Name your emoji and click save');
+    const finalList = finalInstruction?.closest('ol');
+    if (!heading || !finalList || heading.parentElement !== finalList.parentElement) return;
+    let current = heading;
+    while (current) {
+      const next = current.nextElementSibling;
+      if (hidden) {
+        current.dataset.emojiLoaderSupplement = 'hidden';
+        current.hidden = true;
+      } else if (current.dataset.emojiLoaderSupplement === 'hidden') {
+        delete current.dataset.emojiLoaderSupplement;
+        current.hidden = false;
+      }
+      if (current === finalList) break;
+      current = next;
+    }
+  };
+
   const getProfilePageUrl = page => {
     const sort = new URL(location.href).searchParams.get('sort') || 'recent';
     return `${location.origin}${location.pathname}&page=${page}&sort=${encodeURIComponent(sort)}`;
@@ -521,6 +543,7 @@
     running = true;
     cancelled = false;
     primaryButton.textContent = 'Stop full load';
+    setListingSupplementHidden(true);
     let stableChecks = 0;
     try {
       while (!cancelled && stableChecks < END_CHECKS_REQUIRED) {
@@ -545,6 +568,7 @@
     } finally {
       running = false;
       primaryButton.textContent = 'Load full page';
+      if (cancelled) setListingSupplementHidden(false);
     }
   };
 
