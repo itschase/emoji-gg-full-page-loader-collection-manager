@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.1
+// @version      1.0.2
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -27,6 +27,7 @@
   const COLLECTION_STORAGE_KEY = 'collection';
   const COLLECTION_SYNC_CHANNEL = 'emoji-gg-loader-collection';
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
+  const LISTING_READY_KEY = `${ONE_SHOT_KEY}:ready`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
   const hasLoader = isProfile || isListing;
@@ -37,7 +38,26 @@
   let knownIds = new Set();
   let nextProfilePage = 1;
   let profileComplete = false;
-  const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+  let timerWorker = null;
+  let timerSequence = 0;
+  const timerResolvers = new Map();
+  try {
+    timerWorker = new Worker(URL.createObjectURL(new Blob([
+      'self.onmessage=e=>setTimeout(()=>self.postMessage(e.data.id),e.data.delay)'
+    ], { type: 'text/javascript' })));
+    timerWorker.onmessage = event => {
+      timerResolvers.get(event.data)?.();
+      timerResolvers.delete(event.data);
+    };
+  } catch { /* Normal timers remain available if blob workers are unavailable. */ }
+  const wait = milliseconds => {
+    if (!timerWorker) return new Promise(resolve => setTimeout(resolve, milliseconds));
+    const id = ++timerSequence;
+    return new Promise(resolve => {
+      timerResolvers.set(id, resolve);
+      timerWorker.postMessage({ id, delay: milliseconds });
+    });
+  };
   const countCards = () => document.querySelectorAll(CARD_SELECTOR).length;
   const getProfileExpectedCount = () => {
     if (!isProfile) return null;
@@ -141,7 +161,9 @@
   const collectionActions = document.createElement('div');
   collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
   const submitCollectionButton = makeButton('Submit collection ↗');
-  collectionActions.append(clearCollectionButton, submitCollectionButton);
+  const exportCollectionButton = makeButton('Export ZIP');
+  exportCollectionButton.title = 'Download all selected items, including collections larger than 32 items';
+  collectionActions.append(clearCollectionButton, exportCollectionButton, submitCollectionButton);
   const collectionStatus = document.createElement('div');
   collectionStatus.style.cssText = 'font-size:11px;color:rgba(255,255,255,.7);margin-top:6px';
   collectionStatus.setAttribute('aria-live', 'polite');
@@ -286,6 +308,7 @@
       collectionPreview.append(more);
     }
     submitCollectionButton.disabled = items.length === 0 || items.length > 32;
+    exportCollectionButton.disabled = items.length === 0;
     collectionStatus.textContent = items.length > 32 ? 'Reduce to 32 items before submitting.' : 'Clears automatically after a successful pack submission.';
   };
   let collectionChannel = null;
@@ -307,6 +330,16 @@
     refreshCollection(true);
   });
   clearCollectionButton.addEventListener('click', () => saveCollection([]));
+  exportCollectionButton.addEventListener('click', () => {
+    const items = readCollection();
+    if (!items.length) return;
+    if (window.App?.downloadCollectionItems) {
+      window.App.collection = items.slice();
+      window.App.downloadCollectionItems();
+      return;
+    }
+    setMessage('ZIP export is unavailable until Emoji.gg finishes loading its download tools.');
+  });
   submitCollectionButton.addEventListener('click', () => {
     if (!submitCollectionButton.disabled) window.open(`${location.origin}/submit/pack`, '_blank', 'noopener');
   });
@@ -455,23 +488,33 @@
 
     // The site sometimes creates the button only after reaching the bottom.
     // Re-query it rather than relying on a reference captured before scrolling.
-    for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
+    for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
       const loadMore = findLoadMore();
       if (loadMore) {
         loadMore.scrollIntoView({ block: 'center', behavior: 'auto' });
         loadMore.click();
         return true;
       }
-      await wait(150);
+      await wait(75);
     }
     return false;
   };
   const waitForGrowth = async before => {
-    for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
-      await wait(250);
-      if (countCards() > before) return true;
-    }
-    return false;
+    if (countCards() > before) return true;
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = grew => {
+        if (settled) return;
+        settled = true;
+        observer.disconnect();
+        resolve(grew);
+      };
+      const observer = new MutationObserver(() => {
+        if (cancelled || countCards() > before) finish(countCards() > before);
+      });
+      observer.observe(document.querySelector('#items') || document.body, { childList: true, subtree: true });
+      wait(3000).then(() => finish(countCards() > before));
+    });
   };
   const runListing = async () => {
     if (running) return;
@@ -489,7 +532,7 @@
         stableChecks = grew ? 0 : stableChecks + 1;
         if (!grew) {
           setMessage(`${clicked ? 'Load more produced no new items' : 'No Load more control found'} (${stableChecks}/${END_CHECKS_REQUIRED})`);
-          await wait(END_CHECK_WAIT_MS);
+          await wait(document.hidden ? 700 : END_CHECK_WAIT_MS);
         }
       }
       if (!cancelled) {
@@ -530,7 +573,12 @@
       setMessage(`Loading paused (${countCards()} loaded). Click Load full page to continue.`);
       return;
     }
+    if (sessionStorage.getItem(LISTING_READY_KEY) === '1') {
+      runListing();
+      return;
+    }
     sessionStorage.setItem(ONE_SHOT_KEY, '1');
+    sessionStorage.setItem(LISTING_READY_KEY, '1');
     location.reload();
   });
   if (sessionStorage.getItem(ONE_SHOT_KEY) === '1') {

@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.0.1 · License: MIT · Author: Chase (itschase)**
+**Release: 1.0.2 · License: MIT · Author: Chase (itschase)**
 
 [Install from GitHub](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js) · [Source](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
@@ -45,6 +45,8 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **Listings and searches:** the homepage, emoji and sticker listings, tag searches, and categories use the site's loading controls to retrieve more results automatically during a requested full load.
 - **Duplicate protection:** repeated cards are filtered when the native site loader overlaps with the userscript.
 - **Cancel and continue:** pause profile loading while retaining loaded items, then use the load control to continue.
+- **Resume without resetting:** pausing a listing and continuing no longer reloads or clears items already shown.
+- **Background progress:** loader timing remains responsive when the tab loses focus, while normal computer sleep still pauses work.
 - **Back to the top:** confirmed completion returns you to the beginning of the loaded page.
 - **You decide when:** profiles and listings do not expand automatically on a normal visit.
 
@@ -62,7 +64,7 @@ Results arrive in page order, with duplicate item IDs omitted. The profile's sta
 
 Select **Load full page**. The current listing receives a one-time refresh, then the script scrolls to the bottom, finds and activates **Load more**, waits for new cards, removes duplicates, and repeats until three checks find no additional items.
 
-Use **Stop full load** to pause; currently visible items remain. Selecting **Load full page** again starts a new one-time refresh and loading pass. Finish any unsaved page work before starting a listing load. The script does not continuously refresh pages or automatically expand future normal visits.
+Use **Stop full load** to pause; currently visible items remain. Selecting **Load full page** again continues from the current page without refreshing it. The initial full-load request still uses one refresh to establish a clean listing session. The script does not continuously refresh pages or automatically expand future normal visits.
 
 ## Collection manager
 
@@ -72,6 +74,7 @@ Use **Stop full load** to pause; currently visible items remain. Selecting **Loa
 - **Expand or collapse:** click the collection heading to browse all selected images in a scrollable panel.
 - **Remove one item:** hover over its preview and click **×**. Keyboard focus also reveals the button; touchscreens show it continuously.
 - **Clear collection:** reset the temporary selection from any Emoji.gg tab while preserving the loaded page.
+- **Export ZIP:** download the current selection from the widget, including collections larger than the 32-item submission limit.
 - **Submit in a new tab:** open the pack form without navigating away from your profile or listing. This action is disabled above 32 selected items.
 - **Synchronize tabs:** saved selections, counts, previews, and selected card indicators stay synchronized between participating Emoji.gg tabs in the same browser profile.
 - **Clear after success:** only confirmed successful pack submissions remove submitted items. Failed submissions retain their selection.
