@@ -20,8 +20,10 @@
   const CARD_SELECTOR = '.card-image.asset';
   const ITEM_SELECTOR = `.item:has(${CARD_SELECTOR})`;
   const PROFILE_BATCH_SIZE = 500;
+  const PROFILE_PAGES_PER_BATCH = 20;
   const END_CHECKS_REQUIRED = 3;
   const END_CHECK_WAIT_MS = 1400;
+  const PROFILE_END_CHECK_WAIT_MS = 400;
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
@@ -31,6 +33,7 @@
   let cancelled = false;
   let abortController = null;
   let knownIds = new Set();
+  let nextProfilePage = 1;
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const countCards = () => document.querySelectorAll(CARD_SELECTOR).length;
   const getProfileExpectedCount = () => {
@@ -113,42 +116,45 @@
     message.innerHTML = html;
   };
 
-  const findLoadMore = () => [...document.querySelectorAll('a.btn, button.btn')]
+  const findLoadMore = () => [...document.querySelectorAll('a, button')]
     .find(element => element.textContent.trim().toLowerCase() === 'load more'
       && !element.disabled
-      && element.getAttribute('aria-disabled') !== 'true');
+      && element.getAttribute('aria-disabled') !== 'true'
+      && Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
 
-  const loadProfileStep = async () => {
-    const before = countCards();
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
-    window.dispatchEvent(new Event('scroll'));
-
-    // Emoji.gg may recreate this control after earlier loads, so always query
-    // it after reaching the current bottom instead of caching the element.
-    let clicked = false;
-    for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
-      const loadMore = findLoadMore();
-      if (loadMore) {
-        loadMore.scrollIntoView({ block: 'center', behavior: 'auto' });
-        loadMore.click();
-        clicked = true;
-        break;
+  const getProfilePageUrl = page => {
+    const sort = new URL(location.href).searchParams.get('sort') || 'recent';
+    return `${location.origin}${location.pathname}&page=${page}&sort=${encodeURIComponent(sort)}`;
+  };
+  const fetchProfilePage = async page => {
+    const response = await fetch(getProfilePageUrl(page), {
+      credentials: 'same-origin',
+      signal: abortController?.signal
+    });
+    if (!response.ok) throw new Error(`Profile page ${page} returned ${response.status}`);
+    const parsed = new DOMParser().parseFromString(await response.text(), 'text/html');
+    return { page, items: [...parsed.querySelectorAll(ITEM_SELECTOR)] };
+  };
+  const appendProfileItems = results => {
+    const container = document.querySelector('#items') || document.querySelector(ITEM_SELECTOR)?.parentElement;
+    if (!container) throw new Error('Profile item container was not found');
+    document.querySelector('#pagination')?.remove();
+    let appended = 0;
+    for (const result of results.sort((left, right) => left.page - right.page)) {
+      for (const sourceItem of result.items) {
+        const id = getItemId(sourceItem);
+        if (!id || knownIds.has(id)) continue;
+        const item = document.importNode(sourceItem, true);
+        for (const image of item.querySelectorAll('img[data-src]')) {
+          image.src = image.dataset.src;
+          image.loading = 'lazy';
+        }
+        container.appendChild(item);
+        knownIds.add(id);
+        appended += 1;
       }
-      await wait(150);
     }
-
-    for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
-      await wait(250);
-      removeDuplicateItems();
-      if (countCards() > before) break;
-    }
-
-    // One more bottom pass catches a button inserted after the growth check.
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
-    window.dispatchEvent(new Event('scroll'));
-    await wait(250);
-    removeDuplicateItems();
-    return { before, after: countCards(), clicked, hasLoadMore: Boolean(findLoadMore()) };
+    return appended;
   };
   const runProfile = async () => {
     if (running) return;
@@ -157,30 +163,33 @@
     abortController = new AbortController();
     rebuildKnownIds();
     try {
-      let noChangeChecks = 0;
-      let batchStart = countCards();
       const expected = getProfileExpectedCount();
-      while (!cancelled && noChangeChecks < END_CHECKS_REQUIRED) {
-        const loaded = countCards();
-        const batchProgress = loaded - batchStart;
-        setMessage(`Loading profile batch (${Math.min(batchProgress, PROFILE_BATCH_SIZE)}/${PROFILE_BATCH_SIZE}; ${loaded}${expected ? ` of ${expected}` : ''} loaded)…`);
-        const result = await loadProfileStep();
-        if (result.after > result.before || result.hasLoadMore) {
-          noChangeChecks = 0;
-        } else {
-          noChangeChecks += 1;
-          setMessage(`Bottom produced no new items and no Load more control (${noChangeChecks}/${END_CHECKS_REQUIRED}; ${result.after}${expected ? ` of ${expected}` : ''} loaded)`);
+      let emptyChecks = 0;
+      document.querySelector('#pagination')?.remove();
+      while (!cancelled && emptyChecks < END_CHECKS_REQUIRED) {
+        const firstPage = nextProfilePage;
+        const pagesThisPass = emptyChecks === 0 ? PROFILE_PAGES_PER_BATCH : 1;
+        const lastPage = firstPage + pagesThisPass - 1;
+        setMessage(`Fetching profile pages ${firstPage}–${lastPage} in parallel (${countCards()}${expected ? `; profile reports ${expected}` : ''} visible)…`);
+        const pages = Array.from({ length: pagesThisPass }, (_, index) => firstPage + index);
+        const results = await Promise.all(pages.map(fetchProfilePage));
+        const returned = results.reduce((total, result) => total + result.items.length, 0);
+        const appended = appendProfileItems(results);
+        const nonEmptyPages = results.filter(result => result.items.length);
+        if (returned > 0) {
+          nextProfilePage = Math.max(...nonEmptyPages.map(result => result.page)) + 1;
+          emptyChecks = 0;
+          setMessage(`Loaded ${appended} new items from a ${PROFILE_BATCH_SIZE}-item page batch (${countCards()} visible); continuing…`);
+          continue;
         }
-        if (result.after - batchStart >= PROFILE_BATCH_SIZE) {
-          batchStart = result.after;
-          setMessage(`Completed a ${PROFILE_BATCH_SIZE}-item profile batch (${result.after}${expected ? ` of ${expected}` : ''} loaded); continuing…`);
-        }
+        emptyChecks += 1;
+        setMessage(`No items returned at page ${firstPage} (${emptyChecks}/${END_CHECKS_REQUIRED}; ${countCards()} visible)`);
+        await wait(PROFILE_END_CHECK_WAIT_MS);
       }
-      if (!cancelled && noChangeChecks >= END_CHECKS_REQUIRED && !findLoadMore()) {
+      if (!cancelled && emptyChecks >= END_CHECKS_REQUIRED) {
         window.scrollTo({ top: 0, behavior: 'auto' });
-        await wait(600);
         removeDuplicateItems();
-        setMessage(`Loading complete (${countCards()}${expected ? ` of ${expected}` : ''} loaded; bottom unchanged 3 times)`);
+        setMessage(`Loading complete (${countCards()} visible; three empty page batches confirmed)`);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {

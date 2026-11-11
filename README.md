@@ -19,10 +19,9 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 ## Features
 
 - Works with any public Emoji.gg profile at `/user/<username>`.
-- Reads the active profile's Emoji count for progress reporting without trusting that badge as proof that loading is finished.
-- Loads profiles in continuous 500-item cycles using Emoji.gg's live bottom-of-page and **Load more** behavior.
-- Performs repeated bottom-of-page checks after the fast pass so late or native lazy-loaded items are not missed.
-- Refuses to report a profile as complete while an actionable **Load more** button remains.
+- Reads the active profile's Emoji count for progress context without trusting that potentially stale badge as a loading limit.
+- Loads profiles in continuous 500-item batches by fetching 20 profile pages in parallel.
+- Continues past the reported profile count and stops only after three checks of the next real page return no items.
 - Removes duplicate cards introduced when the site's native loader overlaps with the faster loader.
 - Adds an opt-in **Load full page** control to:
   - the Emoji.gg homepage;
@@ -39,7 +38,7 @@ The script keeps normal browsing lightweight. Profile pages load automatically, 
 
 ### Profiles
 
-Opening a supported profile starts the loader automatically. It repeatedly reaches the current bottom, activates a newly available **Load more** control, waits for new cards, filters duplicate item IDs, and continues in 500-item progress cycles. The profile badge is displayed as useful progress context, but it is not treated as proof that loading is complete. Completion requires three consecutive bottom checks that add no cards **and** leave no actionable **Load more** control. If the control reappears during any check, the three-check counter resets and loading continues. This prevents the script from returning to the top while Emoji.gg still has another section available.
+Opening a supported profile starts the loader automatically. It fetches 20 consecutive profile pages in parallel, merges as many as 500 items into the visible profile, filters duplicate item IDs, and immediately continues with the next batch. The profile badge is displayed only as context because Emoji.gg may not update it immediately after new uploads. The loader therefore continues beyond that number and confirms the actual end by checking the next page three times. If items appear during an end check, batching resumes automatically.
 
 The profile panel provides:
 
@@ -95,7 +94,7 @@ The script targets modern Chromium- and Firefox-based browsers with a current us
 ## Troubleshooting
 
 - If loading pauses after a network error, use **Resume / restart**.
-- If Emoji.gg temporarily stops responding, use **Resume / restart** to continue from the cards already loaded; the script will not report completion while **Load more** is still available.
+- If Emoji.gg temporarily stops responding, use **Resume / restart** to continue from the page after the last completed batch.
 - If a listing has changed since the last pass, press **Load full page** again.
 - If Emoji.gg changes its card or pagination markup, please open an issue with the affected URL and browser version.
 
