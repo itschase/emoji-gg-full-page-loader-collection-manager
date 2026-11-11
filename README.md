@@ -32,6 +32,11 @@ The script keeps normal browsing lightweight. Profiles, the homepage, and emoji 
 - Repeatedly finds and activates Emoji.gg's own **Load more** control until the listing stops growing.
 - Lets you pause a running load and start it again later.
 - Returns to the top after a confirmed complete load.
+- Shows collection tools only while a saved collection has items, on every Emoji.gg page.
+- Shows a live item count, compact image previews, and an expandable preview of the full collection.
+- Opens **Submit collection** in a new tab, preserving the loaded profile. Submission is disabled above the site's 32-item limit.
+- Clears successfully submitted items across open tabs only after Emoji.gg confirms success; failures preserve the collection and items added during submission remain available.
+- Provides **Clear collection** to reset saved items, each open tab's in-memory collection, and selected checkmarks without reloading or losing a fully loaded page.
 - Does not continuously refresh pages or automatically expand normal search and discovery pages.
 - Runs entirely in your browser and does not send browsing data to another service.
 
@@ -45,6 +50,9 @@ The profile panel provides:
 
 - **Load full profile** — starts loading or continues after a pause or recoverable error.
 - **Cancel loading** — pauses the current operation and preserves what has already loaded.
+- **Collection · count/32** — appears when items are selected; click to expand or collapse the preview.
+- **Submit collection ↗** — opens the pack form in a new tab. Complete the title, tags, and description and submit there. Confirmed success clears the submitted selection across tabs automatically.
+- **Clear collection** — empties the saved collection and resets selected icons across all open Emoji.gg tabs while keeping the loaded profile in place.
 
 ### Homepage, emoji listings, and sticker listings
 
@@ -82,7 +90,11 @@ The script also has a [Greasy Fork page](https://greasyfork.org/en/scripts/60457
 | `/category` | Displays an opt-in one-time full-page loader. |
 | `/category/<name>` | Displays an opt-in one-time full-page loader for that category. |
 
-The script intentionally does nothing on submission, account, marketplace, and unrelated Emoji.gg pages.
+Collection controls are available on every Emoji.gg route when items are selected, including submission and account pages where the loading controls do not apply. Changes synchronize through browser storage and a live cross-tab channel. The script refreshes the site's in-memory collection before add/remove actions, so an older fully loaded tab cannot restore the previous pack's items. Switching tabs also refreshes the current selection.
+
+On submission, account, marketplace, and other unrelated Emoji.gg pages, the widget stays hidden until a collection exists and then displays only collection controls. It does not run loading behavior there.
+
+Automatic clearing uses Emoji.gg's confirmed successful `/api/submit/pack` response, not a button click, timeout, redirect, or guessed success message. Only IDs sent in that request are removed; additional items selected while the request is pending stay in the collection. Already open tabs need this version running to participate fully in synchronization. After installing the update, reload each existing tab once; future collection cycles preserve the loaded page.
 
 ## Resource usage
 

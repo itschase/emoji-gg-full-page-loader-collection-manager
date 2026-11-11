@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Emoji.gg Universal Full Page Loader
 // @namespace    emoji.gg.full-page-loader
-// @version      1.3
-// @description  Fast-loads complete Emoji.gg profiles and adds an opt-in full-page loader to emoji and sticker listings.
+// @version      1.4
+// @description  Fast-loads complete Emoji.gg profiles, listings, and safely resets saved collections across open tabs.
 // @author       Chase (itschase)
 // @license      MIT
 // @homepageURL  https://github.com/itschase/emoji-gg-universal-full-page-loader
@@ -24,10 +24,12 @@
   const END_CHECKS_REQUIRED = 3;
   const END_CHECK_WAIT_MS = 1400;
   const PROFILE_END_CHECK_WAIT_MS = 400;
+  const COLLECTION_STORAGE_KEY = 'collection';
+  const COLLECTION_SYNC_CHANNEL = 'emoji-gg-loader-collection';
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
-  if (!isProfile && !isListing) return;
+  const hasLoader = isProfile || isListing;
 
   let running = false;
   let cancelled = false;
@@ -112,10 +114,29 @@
   message.setAttribute('aria-live', 'polite');
   message.style.marginBottom = '10px';
   const controls = document.createElement('div');
-  Object.assign(controls.style, { display: 'flex', justifyContent: 'flex-end', gap: '7px' });
+  Object.assign(controls.style, { display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '7px' });
   const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page');
-  controls.append(primaryButton);
+  const clearCollectionButton = makeButton('Clear collection');
+  clearCollectionButton.title = 'Clear the saved collection and reset selected icons in every open Emoji.gg tab';
+  if (hasLoader) controls.append(primaryButton);
   panel.append(title, message, controls);
+  const collectionSection = document.createElement('section');
+  collectionSection.setAttribute('aria-label', 'Saved collection');
+  collectionSection.style.cssText = 'margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px';
+  const collectionToggle = makeButton('Collection');
+  collectionToggle.style.width = '100%';
+  collectionToggle.setAttribute('aria-expanded', 'false');
+  const collectionPreview = document.createElement('div');
+  collectionPreview.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:9px 0;max-height:180px;overflow:auto';
+  const collectionActions = document.createElement('div');
+  collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
+  const submitCollectionButton = makeButton('Submit collection ↗');
+  collectionActions.append(clearCollectionButton, submitCollectionButton);
+  const collectionStatus = document.createElement('div');
+  collectionStatus.style.cssText = 'font-size:11px;color:rgba(255,255,255,.7);margin-top:6px';
+  collectionStatus.setAttribute('aria-live', 'polite');
+  collectionSection.append(collectionToggle, collectionPreview, collectionActions, collectionStatus);
+  panel.append(collectionSection);
   document.body.appendChild(panel);
   const ensurePanel = () => {
     if (!panel.isConnected && document.body) document.body.appendChild(panel);
@@ -128,6 +149,156 @@
     ensurePanel();
     message.innerHTML = html;
   };
+
+  const emptyCollectionMarkup = () => '<div class="col-12 text-center py-4">'
+    + '<p class="small mb-1">Your collection is empty.</p>'
+    + '<p class="small">Click the <i class="fa-solid fa-folder-plus"></i> to save items.</p>'
+    + '</div>';
+
+  const resetCollectionButton = button => {
+    const hadToggleClasses = button.classList.contains('btn-success') || button.classList.contains('btn-default');
+    button.classList.remove('btn-success', 'active', 'selected', 'is-selected');
+    button.removeAttribute('aria-pressed');
+    button.removeAttribute('data-selected');
+    if (hadToggleClasses) {
+      button.classList.add('btn-default');
+      button.innerHTML = '<i class="far fa-bookmark"></i>';
+    } else if (button.classList.contains('badge-ext')) {
+      button.innerHTML = '<i class="far fa-bookmark"></i>';
+    } else {
+      button.innerHTML = '<i class="fa-solid fa-folder-plus text-dark"></i>';
+    }
+  };
+
+  let collectionExpanded = false;
+  let lastCollectionSignature = null;
+  const readCollection = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY) || '[]');
+      return Array.isArray(value) ? [...new Set(value.filter(id => typeof id === 'string' && /^[\w.-]+$/.test(id)))] : [];
+    } catch { return []; }
+  };
+  const refreshCollection = (force = false) => {
+    const items = readCollection();
+    const signature = JSON.stringify(items);
+    if (!force && signature === lastCollectionSignature) return;
+    lastCollectionSignature = signature;
+    // Do not call setCollection here: writing from storage listeners can cause tab feedback loops.
+    if (window.App) {
+      window.App.collection = items.slice();
+      window.App.loadCollectionItems?.();
+    } else if (!items.length) {
+      document.querySelectorAll('.collection-items').forEach(el => { el.innerHTML = emptyCollectionMarkup(); });
+    }
+    const selected = new Set(items);
+    document.querySelectorAll('.collection[data-id]').forEach(button => {
+      if (selected.has(button.dataset.id)) {
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.setAttribute('aria-pressed', 'true');
+      } else resetCollectionButton(button);
+    });
+    const count = document.querySelector('#collection-count');
+    if (count) {
+      count.textContent = String(items.length);
+      count.style.display = items.length ? '' : 'none';
+    }
+    collectionSection.hidden = !items.length;
+    panel.hidden = !hasLoader && !items.length;
+    message.hidden = !hasLoader;
+    controls.hidden = !hasLoader;
+    collectionToggle.textContent = `Collection · ${items.length}/32 ${collectionExpanded ? '▴' : '▾'}`;
+    collectionToggle.setAttribute('aria-expanded', String(collectionExpanded));
+    collectionPreview.replaceChildren();
+    for (const id of items.slice(0, collectionExpanded ? items.length : 5)) {
+      const image = document.createElement('img');
+      image.src = `https://cdn3.emoji.gg/emojis/${encodeURIComponent(id)}`;
+      image.width = image.height = 34;
+      image.alt = id.replace(/^[0-9]+-/, '').replace(/\.[^.]+$/, '');
+      image.title = image.alt;
+      image.loading = 'lazy';
+      image.style.cssText = 'object-fit:contain;background:rgba(255,255,255,.04);border-radius:5px';
+      collectionPreview.append(image);
+    }
+    if (!collectionExpanded && items.length > 5) {
+      const more = document.createElement('span');
+      more.textContent = `+${items.length - 5}`;
+      collectionPreview.append(more);
+    }
+    submitCollectionButton.disabled = items.length === 0 || items.length > 32;
+    collectionStatus.textContent = items.length > 32 ? 'Reduce to 32 items before submitting.' : 'Clears automatically after a successful pack submission.';
+  };
+  let collectionChannel = null;
+  if ('BroadcastChannel' in window) {
+    collectionChannel = new BroadcastChannel(COLLECTION_SYNC_CHANNEL);
+    collectionChannel.addEventListener('message', () => refreshCollection(true));
+  }
+  const saveCollection = items => {
+    localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(items));
+    refreshCollection(true);
+    collectionChannel?.postMessage({ type: 'collection-changed' });
+  };
+  window.addEventListener('storage', event => {
+    if (event.key === COLLECTION_STORAGE_KEY || event.key === null) refreshCollection(true);
+  });
+  window.addEventListener('focus', () => refreshCollection(true));
+  collectionToggle.addEventListener('click', () => {
+    collectionExpanded = !collectionExpanded;
+    refreshCollection(true);
+  });
+  clearCollectionButton.addEventListener('click', () => saveCollection([]));
+  submitCollectionButton.addEventListener('click', () => {
+    if (!submitCollectionButton.disabled) window.open(`${location.origin}/submit/pack`, '_blank', 'noopener');
+  });
+  // Re-read shared state before the site's delegated add/remove/submit handler runs.
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('.collection, .remove-collection, .clear-collection, .item-submit') && window.App) {
+      window.App.collection = readCollection();
+    }
+  }, true);
+
+  let hookedApp = null;
+  let hookedAjax = false;
+  const submittedCollections = new WeakMap();
+  const installCollectionHooks = () => {
+    const app = window.App;
+    if (app?.setCollection && hookedApp !== app) {
+      hookedApp = app;
+      const originalSet = app.setCollection;
+      app.setCollection = function (...args) {
+        const result = originalSet.apply(this, args);
+        refreshCollection(true);
+        collectionChannel?.postMessage({ type: 'collection-changed' });
+        return result;
+      };
+      refreshCollection(true);
+    }
+    if (!hookedAjax && window.jQuery) {
+      hookedAjax = true;
+      window.jQuery(document).on('ajaxSend.emojiLoaderCollection', (_event, xhr, settings) => {
+        if (new URL(settings.url, location.href).pathname !== '/api/submit/pack') return;
+        // Snapshot the actual submitted IDs; retain items added while the request was in flight.
+        const raw = settings.data?.get?.('items');
+        if (typeof raw === 'string') submittedCollections.set(xhr, raw.split(',').filter(Boolean));
+      }).on('ajaxSuccess.emojiLoaderCollection', (_event, xhr, _settings, response) => {
+        const submitted = submittedCollections.get(xhr);
+        if (!submitted) return;
+        submittedCollections.delete(xhr);
+        let result = response;
+        try { if (typeof result === 'string') result = JSON.parse(result); } catch { return; }
+        if (result?.status !== 'success') return;
+        const completed = new Set(submitted);
+        saveCollection(readCollection().filter(id => !completed.has(id)));
+      });
+    }
+  };
+  installCollectionHooks();
+  refreshCollection(true);
+  // Lightweight fallback for delayed site startup or older background tabs returning to focus.
+  window.setInterval(() => { installCollectionHooks(); refreshCollection(); }, 1000);
+
+  if (!hasLoader) {
+    return;
+  }
 
   const findLoadMore = () => [...document.querySelectorAll('a, button')]
     .find(element => element.textContent.trim().toLowerCase() === 'load more'
