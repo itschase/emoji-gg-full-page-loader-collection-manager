@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         Emoji.gg Universal Full Page Loader
+// @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.4.1
-// @description  Fast-loads complete Emoji.gg profiles, listings, and safely resets saved collections across open tabs.
+// @version      1.0
+// @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
-// @homepageURL  https://github.com/itschase/emoji-gg-universal-full-page-loader
-// @supportURL   https://github.com/itschase/emoji-gg-universal-full-page-loader/issues
-// @downloadURL  https://raw.githubusercontent.com/itschase/emoji-gg-universal-full-page-loader/main/emoji-gg-universal-full-page-loader.user.js
-// @updateURL    https://raw.githubusercontent.com/itschase/emoji-gg-universal-full-page-loader/main/emoji-gg-universal-full-page-loader.user.js
+// @homepageURL  https://github.com/itschase/emoji-gg-full-page-loader-collection-manager
+// @supportURL   https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues
+// @downloadURL  https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js
+// @updateURL    https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js
 // @match        https://emoji.gg/*
 // @run-at       document-idle
 // @grant        none
