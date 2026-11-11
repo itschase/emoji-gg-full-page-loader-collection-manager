@@ -105,9 +105,9 @@ The script runs on `https://emoji.gg/*` with `@grant none`. The repository keeps
 
 ### Updates directly from GitHub
 
-Both `@updateURL` and `@downloadURL` point directly to the script in **itschase/emoji-gg-full-page-loader-collection-manager**. GitHub is the intended source for the most recent releases. Your manager controls update-check timing and any source overrides.
+In the GitHub source, both `@updateURL` and `@downloadURL` point directly to the script in **itschase/emoji-gg-full-page-loader-collection-manager**. GitHub is the intended source for the most recent releases. Your manager controls update-check timing and any source overrides.
 
-If an installation from a script directory is not checking GitHub, open the direct installation link once and review its update settings. After updating, reload existing Emoji.gg tabs once so each tab runs the same version.
+**For updates directly from GitHub, install using the direct GitHub link above.** Greasy Fork rewrites the update and download URLs in the installer it serves, so its standard **Install this script** button uses Greasy Fork's update service instead. This directory behavior cannot be prevented by putting GitHub URLs in the source metadata. If switching an existing installation, reinstall from GitHub and verify its update settings in your manager. After updating, reload existing Emoji.gg tabs once so each tab runs the same version.
 
 ### Migration from Universal Full Page Loader
 
