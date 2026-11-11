@@ -109,8 +109,6 @@ In the GitHub source, both `@updateURL` and `@downloadURL` point directly to the
 
 **For updates directly from GitHub, install using the direct GitHub link above.** Greasy Fork rewrites the update and download URLs in the installer it serves, so its standard **Install this script** button uses Greasy Fork's update service instead. This directory behavior cannot be prevented by putting GitHub URLs in the source metadata. If switching an existing installation, reinstall from GitHub and verify its update settings in your manager. After updating, reload existing Emoji.gg tabs once so each tab runs the same version.
 
-### Migration from Universal Full Page Loader
-
 ### Greasy Fork source synchronization
 
 The Greasy Fork listing syncs the userscript and this README from the repository. A signed GitHub push webhook notifies Greasy Fork when changes are pushed, so the listing can refresh without a manual sync. Installed userscripts still check for updates according to their manager's settings; code releases should increase `@version`.
