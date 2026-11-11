@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Universal Full Page Loader
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2
+// @version      1.3
 // @description  Fast-loads complete Emoji.gg profiles and adds an opt-in full-page loader to emoji and sticker listings.
 // @author       Chase (itschase)
 // @license      MIT
@@ -78,30 +78,44 @@
     return removed;
   };
 
-  const makeButton = (label, color) => {
+  const makeButton = label => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
     Object.assign(button.style, {
-      padding: '7px 11px', border: '0', borderRadius: '6px', background: color,
-      color: '#fff', font: '600 12px system-ui,sans-serif', cursor: 'pointer'
+      minHeight: '32px', padding: '7px 12px', border: '1px solid rgba(255,255,255,.16)',
+      borderRadius: '7px', background: 'rgba(255,255,255,.12)', color: '#fff',
+      font: '600 12px/1 system-ui,sans-serif', cursor: 'pointer', transition: 'background .15s ease'
     });
+    button.addEventListener('mouseenter', () => { button.style.background = 'rgba(255,255,255,.2)'; });
+    button.addEventListener('mouseleave', () => { button.style.background = 'rgba(255,255,255,.12)'; });
     return button;
   };
   const panel = document.createElement('div');
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', 'Emoji.gg full-page loader');
   Object.assign(panel.style, {
-    position: 'fixed', right: '16px', bottom: '16px', zIndex: '2147483647',
-    minWidth: '280px', maxWidth: '380px', padding: '11px 12px', borderRadius: '9px',
-    background: 'rgba(20,20,26,.96)', color: '#fff', font: '600 13px/1.3 system-ui,sans-serif',
-    boxShadow: '0 4px 18px rgba(0,0,0,.35)'
+    position: 'fixed', right: '12px', bottom: '12px', zIndex: '2147483647',
+    width: 'min(320px, calc(100vw - 24px))', boxSizing: 'border-box', padding: '12px',
+    border: '1px solid rgba(255,255,255,.12)', borderRadius: '10px',
+    background: 'rgba(0,0,0,.78)', color: '#fff', font: '500 13px/1.4 system-ui,sans-serif',
+    boxShadow: '0 8px 28px rgba(0,0,0,.38)', backdropFilter: 'blur(12px) saturate(120%)',
+    webkitBackdropFilter: 'blur(12px) saturate(120%)'
+  });
+  const title = document.createElement('div');
+  title.textContent = 'Emoji.gg Loader';
+  Object.assign(title.style, {
+    marginBottom: '5px', color: 'rgba(255,255,255,.62)', font: '700 10px/1.2 system-ui,sans-serif',
+    letterSpacing: '.08em', textTransform: 'uppercase'
   });
   const message = document.createElement('div');
-  message.style.marginBottom = '9px';
+  message.setAttribute('aria-live', 'polite');
+  message.style.marginBottom = '10px';
   const controls = document.createElement('div');
-  Object.assign(controls.style, { display: 'flex', gap: '7px' });
-  const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page', '#5865f2');
+  Object.assign(controls.style, { display: 'flex', justifyContent: 'flex-end', gap: '7px' });
+  const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page');
   controls.append(primaryButton);
-  panel.append(message, controls);
+  panel.append(title, message, controls);
   document.body.appendChild(panel);
   const ensurePanel = () => {
     if (!panel.isConnected && document.body) document.body.appendChild(panel);
@@ -161,7 +175,6 @@
     cancelled = false;
     abortController = new AbortController();
     primaryButton.textContent = 'Cancel loading';
-    primaryButton.style.background = '#c63c4f';
     rebuildKnownIds();
     try {
       const expected = getProfileExpectedCount();
@@ -196,12 +209,11 @@
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('[Emoji.gg full-page loader]', error);
-        setMessage(`Paused after an error (${countCards()} loaded) — click Resume`);
+        setMessage(`Paused after an error (${countCards()} loaded). Click Load full profile to continue.`);
       }
     } finally {
       running = false;
       primaryButton.textContent = 'Load full profile';
-      primaryButton.style.background = '#5865f2';
     }
   };
 
@@ -234,7 +246,6 @@
     running = true;
     cancelled = false;
     primaryButton.textContent = 'Stop full load';
-    primaryButton.style.background = '#c63c4f';
     let stableChecks = 0;
     try {
       while (!cancelled && stableChecks < END_CHECKS_REQUIRED) {
@@ -259,7 +270,6 @@
     } finally {
       running = false;
       primaryButton.textContent = 'Load full page';
-      primaryButton.style.background = '#5865f2';
     }
   };
 

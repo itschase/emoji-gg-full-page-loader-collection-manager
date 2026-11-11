@@ -19,6 +19,7 @@ The script keeps normal browsing lightweight. Profiles, the homepage, and emoji 
 ## Features
 
 - Adds an opt-in **Load full profile** control to any public Emoji.gg profile at `/user/<username>`.
+- Uses a compact, monochrome, semi-transparent black control panel that stays readable without overpowering the page.
 - Reads the active profile's Emoji count for progress context without trusting that potentially stale badge as a loading limit.
 - Loads profiles in continuous 500-item batches by fetching 20 profile pages in parallel.
 - Continues past the reported profile count and stops only after three checks of the next real page return no items.
