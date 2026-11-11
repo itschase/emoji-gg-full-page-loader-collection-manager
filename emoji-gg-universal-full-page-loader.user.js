@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0
+// @version      1.0.1
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -147,6 +147,39 @@
   collectionStatus.setAttribute('aria-live', 'polite');
   collectionSection.append(collectionToggle, collectionPreview, collectionActions, collectionStatus);
   panel.append(collectionSection);
+  const minimizeKey = 'emoji-gg-widget-minimized';
+  const panelContents = document.createElement('div');
+  panelContents.id = 'emoji-loader-panel-contents';
+  panelContents.append(title, message, controls, collectionSection);
+  title.style.marginRight = '30px';
+  const minimizeButton = makeButton('›');
+  minimizeButton.setAttribute('aria-controls', panelContents.id);
+  Object.assign(minimizeButton.style, { minHeight: '28px', width: '28px', padding: '0', fontSize: '20px' });
+  panel.append(panelContents, minimizeButton);
+  const applyMinimized = minimized => {
+    panelContents.hidden = minimized;
+    panel.style.width = minimized ? '40px' : 'min(320px, calc(100vw - 24px))';
+    panel.style.padding = minimized ? '5px' : '12px';
+    panel.style.right = minimized ? '0' : '12px';
+    minimizeButton.style.position = minimized ? 'relative' : 'absolute';
+    minimizeButton.style.top = minimized ? '0' : '6px';
+    minimizeButton.style.right = minimized ? '0' : '6px';
+    minimizeButton.textContent = minimized ? '‹' : '›';
+    minimizeButton.title = minimized ? 'Show Emoji.gg tools' : 'Minimize Emoji.gg tools';
+    minimizeButton.setAttribute('aria-label', minimizeButton.title);
+    minimizeButton.setAttribute('aria-expanded', String(!minimized));
+  };
+  let initiallyMinimized = false;
+  try { initiallyMinimized = localStorage.getItem(minimizeKey) === '1'; } catch { /* Keep the panel usable if storage is unavailable. */ }
+  applyMinimized(initiallyMinimized);
+  minimizeButton.addEventListener('click', () => {
+    const minimized = !panelContents.hidden;
+    applyMinimized(minimized);
+    try { localStorage.setItem(minimizeKey, minimized ? '1' : '0'); } catch { /* Current-page toggling still works. */ }
+  });
+  window.addEventListener('storage', event => {
+    if (event.key === minimizeKey) applyMinimized(event.newValue === '1');
+  });
   document.body.appendChild(panel);
   const ensurePanel = () => {
     if (!panel.isConnected && document.body) document.body.appendChild(panel);
