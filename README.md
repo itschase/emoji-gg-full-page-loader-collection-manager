@@ -34,6 +34,7 @@ The script keeps normal browsing lightweight. Profiles, the homepage, and emoji 
 - Returns to the top after a confirmed complete load.
 - Shows collection tools only while a saved collection has items, on every Emoji.gg page.
 - Shows a live item count, compact image previews, and an expandable preview of the full collection.
+- Hover over a preview to reveal its **×** button and remove just that item. The button also appears on keyboard focus and stays visible on touchscreens. Removal synchronizes across tabs and updates selected checkmarks immediately.
 - Opens **Submit collection** in a new tab, preserving the loaded profile. Submission is disabled above the site's 32-item limit.
 - Clears successfully submitted items across open tabs only after Emoji.gg confirms success; failures preserve the collection and items added during submission remain available.
 - Provides **Clear collection** to reset saved items, each open tab's in-memory collection, and selected checkmarks without reloading or losing a fully loaded page.

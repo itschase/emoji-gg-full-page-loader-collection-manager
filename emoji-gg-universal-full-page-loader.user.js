@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Universal Full Page Loader
 // @namespace    emoji.gg.full-page-loader
-// @version      1.4
+// @version      1.4.1
 // @description  Fast-loads complete Emoji.gg profiles, listings, and safely resets saved collections across open tabs.
 // @author       Chase (itschase)
 // @license      MIT
@@ -128,6 +128,16 @@
   collectionToggle.setAttribute('aria-expanded', 'false');
   const collectionPreview = document.createElement('div');
   collectionPreview.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:9px 0;max-height:180px;overflow:auto';
+  const previewStyles = document.createElement('style');
+  previewStyles.textContent = `
+    .emoji-loader-preview { position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0; }
+    .emoji-loader-remove { position:absolute;top:0;right:0;width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:#171717;color:white;font:700 17px/18px system-ui,sans-serif;cursor:pointer;opacity:0;transition:opacity .12s; }
+    .emoji-loader-preview:hover .emoji-loader-remove, .emoji-loader-preview:focus-within .emoji-loader-remove { opacity:1; }
+    .emoji-loader-remove:focus-visible { outline:2px solid white;outline-offset:2px; }
+    @media (hover:none), (pointer:coarse) { .emoji-loader-remove { opacity:1; } }
+    @media (prefers-reduced-motion:reduce) { .emoji-loader-remove { transition:none; } }
+  `;
+  panel.append(previewStyles);
   const collectionActions = document.createElement('div');
   collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
   const submitCollectionButton = makeButton('Submit collection ↗');
@@ -210,6 +220,8 @@
     collectionToggle.setAttribute('aria-expanded', String(collectionExpanded));
     collectionPreview.replaceChildren();
     for (const id of items.slice(0, collectionExpanded ? items.length : 5)) {
+      const preview = document.createElement('span');
+      preview.className = 'emoji-loader-preview';
       const image = document.createElement('img');
       image.src = `https://cdn3.emoji.gg/emojis/${encodeURIComponent(id)}`;
       image.width = image.height = 34;
@@ -217,7 +229,23 @@
       image.title = image.alt;
       image.loading = 'lazy';
       image.style.cssText = 'object-fit:contain;background:rgba(255,255,255,.04);border-radius:5px';
-      collectionPreview.append(image);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'emoji-loader-remove';
+      remove.textContent = '×';
+      remove.title = `Remove ${image.alt} from collection`;
+      remove.setAttribute('aria-label', remove.title);
+      remove.addEventListener('click', () => {
+        const index = [...collectionPreview.querySelectorAll('.emoji-loader-remove')].indexOf(remove);
+        const keepKeyboardFocus = document.activeElement === remove;
+        saveCollection(readCollection().filter(item => item !== id));
+        if (keepKeyboardFocus) {
+          const remaining = collectionPreview.querySelectorAll('.emoji-loader-remove');
+          (remaining[Math.min(index, remaining.length - 1)] || collectionToggle).focus();
+        }
+      });
+      preview.append(image, remove);
+      collectionPreview.append(preview);
     }
     if (!collectionExpanded && items.length > 5) {
       const more = document.createElement('span');
