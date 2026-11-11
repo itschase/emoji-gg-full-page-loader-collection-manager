@@ -8,6 +8,8 @@ This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoj
 
 [Install from GitHub](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js) · [Source](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
+Also available on [Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager). The previous Greasy Fork listing has been retired with this script selected as its replacement.
+
 ## Why I created it
 
 I wanted to browse someone's entire emoji profile without repeatedly waiting for Emoji.gg's incremental loading or scrolling through another small section at a time. The same problem made searching for emojis and stickers tedious: finding the right image should not require repeatedly stopping to press **Load more**.
