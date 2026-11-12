@@ -18,17 +18,32 @@ The loader continues through available results rather than relying solely on the
 
 ## Screenshots
 
-### Continuous profile loading
+![Emoji.gg loader and collection manager with compact heart previews and action buttons](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/widget-preview-1.1.png)
 
-![Profile loading progress with parallel page requests, visible and reported counts, and Cancel loading](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/profile-loading-1.0.png)
+The compact widget keeps loading, collection previews, ZIP export, and both submission options together.
 
-The loader shows which pages are being requested, how many items are visible, and the profile's reported count. **Cancel loading** preserves results already loaded.
+<details>
+<summary>More screenshots and feature examples</summary>
 
-### Compact loader and collection manager
+### Expanded collection
 
-![Widget showing Load full page, collection count, image previews, Clear collection, and Submit collection](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/collection-widget-1.0.png)
+View the full selection before preparing a pack. Hover over an individual preview to reveal its remove control.
 
-Loading and collection controls share a small, translucent black panel with subdued buttons and consistent SVG icons. Collection controls appear only when you have selected items. Click the collection heading to expand previews; hover over a preview to reveal its remove button.
+![Expanded collection showing fourteen heart emojis](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/collection-expanded-1.1.png)
+
+### Minimized widget
+
+Hide the panel at the right edge while keeping your selection and loading state. Use the chevron to reopen it.
+
+![Minimized widget at the right edge of the browsing page](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/widget-minimized-1.1.png)
+
+### Same-tab submission
+
+Open the native pack form in a centered dialog to enter a name, tags, and description while keeping your browsing page available.
+
+![Native collection submission dialog with name, tags, and description fields](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/submission-dialog-1.1.png)
+
+</details>
 
 ## Fast full-page loading
 
