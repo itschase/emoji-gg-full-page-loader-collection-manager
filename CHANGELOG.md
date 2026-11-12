@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1 — 2026-11-12
+
+- Correct profile pagination URLs and end detection when a page repeats already loaded items.
+- Add parallel loading for public profile pack pages.
+- Remove marketplace product cards from emoji and sticker result grids.
+- Add top and bottom navigation controls on long pages.
+- Open asset detail links in new tabs during collection building; add a setting to hide View buttons.
+- Add optional darker site styling, disabled by default.
+- Organize feature details and secondary documentation into expandable README sections.
+
 ## 1.2 — 2026-11-12
 
 - Display paused loading status and the resume instruction on separate lines.

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2
+// @version      1.2.1
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -17,9 +17,8 @@
 (() => {
   'use strict';
 
-  const CARD_SELECTOR = '.card-image.asset';
+  const CARD_SELECTOR = '.card-image.asset:not(.product)';
   const ITEM_SELECTOR = `.item:has(${CARD_SELECTOR})`;
-  const PROFILE_BATCH_SIZE = 500;
   const PROFILE_PAGES_PER_BATCH = 20;
   const END_CHECKS_REQUIRED = 3;
   const END_CHECK_WAIT_MS = 1400;
@@ -29,8 +28,11 @@
   const ONE_SHOT_KEY = `emoji-gg-full-load:${location.pathname}${location.search}`;
   const LISTING_READY_KEY = `${ONE_SHOT_KEY}:ready`;
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
-  const isListing = location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
+  const isProfilePacks = /^\/user\/[^/]+\/packs\/?$/.test(location.pathname);
+  const isParallelProfile = isProfile || isProfilePacks;
+  const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
   const hasLoader = isProfile || isListing;
+  const isSearchListing = /^\/(emojis|stickers)(?:\/|$)/.test(location.pathname) || location.pathname === '/';
 
   let running = false;
   let cancelled = false;
@@ -78,7 +80,7 @@
   const getItemId = item => {
     const collection = item.querySelector('.collection[data-id]');
     if (collection?.dataset.id) return collection.dataset.id;
-    const view = item.querySelector('a[href*="/emoji/"], a[href*="/sticker/"]');
+    const view = item.querySelector('a[href*="/emoji/"], a[href*="/sticker/"], a[href*="/pack/"]');
     return view?.href || item.querySelector('img')?.src || '';
   };
   const rebuildKnownIds = () => {
@@ -99,6 +101,20 @@
     knownIds = seen;
     return removed;
   };
+  const removePromotionalCards = () => {
+    if (!isSearchListing) return;
+    document.querySelectorAll('#items .item:has(.card-image.asset.product)').forEach(item => item.remove());
+  };
+  removePromotionalCards();
+  if (isSearchListing) {
+    const productObserver = new MutationObserver(removePromotionalCards);
+    const watchProducts = () => {
+      const grid = document.querySelector('#items');
+      if (grid) productObserver.observe(grid, { childList: true, subtree: true });
+      else setTimeout(watchProducts, 500);
+    };
+    watchProducts();
+  }
 
   const makeButton = (label, textOnly = false) => {
     const button = document.createElement('button');
@@ -146,12 +162,56 @@
   message.style.marginBottom = '10px';
   const controls = document.createElement('div');
   Object.assign(controls.style, { display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '7px' });
-  const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page');
+  const primaryButton = makeButton(isParallelProfile ? 'Load full profile' : 'Load full page');
+  const settingsButton = makeButton('Settings');
+  const settingsPanel = document.createElement('div');
+  settingsPanel.hidden = true;
+  settingsPanel.style.cssText = 'padding:8px;margin-top:7px;border:1px solid #333;border-radius:7px;background:#0a0a0a';
+  const settingKey = 'emoji-gg-widget-settings';
+  let settings = { hideView: false, darker: false };
+  try { settings = { ...settings, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch { /* Defaults remain usable. */ }
+  const makeSetting = (label, key) => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:center;gap:7px;margin:5px 0;cursor:pointer';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = Boolean(settings[key]);
+    row.append(input, document.createTextNode(label));
+    input.addEventListener('change', () => {
+      settings[key] = input.checked;
+      localStorage.setItem(settingKey, JSON.stringify(settings));
+      applySitePreferences();
+    });
+    settingsPanel.append(row);
+    return input;
+  };
+  const hideViewInput = makeSetting('Hide View buttons', 'hideView');
+  const darkerInput = makeSetting('Darker styling', 'darker');
+  const settingsHint = document.createElement('div');
+  settingsHint.style.cssText = 'color:#d99;font-size:11px';
+  settingsHint.textContent = 'Asset links open in a new tab while a collection is active.';
+  settingsPanel.append(settingsHint);
+  settingsButton.addEventListener('click', () => { settingsPanel.hidden = !settingsPanel.hidden; });
   const clearCollectionButton = makeButton('Clear collection');
   addButtonIcon(clearCollectionButton, 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7');
   clearCollectionButton.title = 'Clear the saved collection and reset selected icons in every open Emoji.gg tab';
   if (hasLoader) controls.append(primaryButton);
-  panel.append(title, message, controls);
+  controls.append(settingsButton);
+  const jumpControls = document.createElement('div');
+  jumpControls.style.cssText = 'display:none;justify-content:flex-end;gap:6px;margin-top:6px';
+  const topButton = makeButton('↑ Top');
+  const bottomButton = makeButton('↓ Bottom');
+  topButton.title = 'Scroll to the top of this page';
+  bottomButton.title = 'Scroll to the bottom of this page';
+  topButton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  bottomButton.addEventListener('click', () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
+  jumpControls.append(topButton, bottomButton);
+  const updateJumpControls = () => {
+    jumpControls.style.display = !panelContents.hidden && document.documentElement.scrollHeight > innerHeight * 2 ? 'flex' : 'none';
+  };
+  window.addEventListener('scroll', updateJumpControls, { passive: true });
+  window.addEventListener('resize', updateJumpControls);
+  panel.append(title, message, controls, jumpControls, settingsPanel);
   const collectionSection = document.createElement('section');
   collectionSection.setAttribute('aria-label', 'Saved collection');
   collectionSection.style.cssText = 'margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px';
@@ -197,7 +257,7 @@
   const minimizeKey = 'emoji-gg-widget-minimized';
   const panelContents = document.createElement('div');
   panelContents.id = 'emoji-loader-panel-contents';
-  panelContents.append(title, message, controls, collectionSection);
+  panelContents.append(title, message, controls, jumpControls, settingsPanel, collectionSection);
   title.style.marginRight = '30px';
   const minimizeButton = makeButton('›');
   minimizeButton.setAttribute('aria-controls', panelContents.id);
@@ -215,6 +275,7 @@
     minimizeButton.title = minimized ? 'Show Emoji.gg tools' : 'Minimize Emoji.gg tools';
     minimizeButton.setAttribute('aria-label', minimizeButton.title);
     minimizeButton.setAttribute('aria-expanded', String(!minimized));
+    updateJumpControls();
   };
   let initiallyMinimized = false;
   try { initiallyMinimized = localStorage.getItem(minimizeKey) === '1'; } catch { /* Keep the panel usable if storage is unavailable. */ }
@@ -227,7 +288,36 @@
   window.addEventListener('storage', event => {
     if (event.key === minimizeKey) applyMinimized(event.newValue === '1');
   });
+  const siteStyles = document.createElement('style');
+  siteStyles.textContent = `
+    html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/emoji/"],
+    html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/sticker/"],
+    html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/pack/"] { display:none!important; }
+    html.emoji-loader-darker body, html.emoji-loader-darker main,
+    html.emoji-loader-darker .container, html.emoji-loader-darker .scrollable { background-color:#090a0c!important;color:#e8e8e8; }
+    html.emoji-loader-darker .card, html.emoji-loader-darker .asset-card,
+    html.emoji-loader-darker .card-image, html.emoji-loader-darker .dropdown-menu,
+    html.emoji-loader-darker .modal-content { background-color:#15171a!important;color:#e8e8e8!important;border-color:#303238!important; }
+    html.emoji-loader-darker input, html.emoji-loader-darker select,
+    html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control { background-color:#1b1d21!important;color:#f4f4f4!important;border-color:#42454b!important; }
+    html.emoji-loader-darker a:not(.btn) { color:#aebaff; }
+  `;
+  document.head.append(siteStyles);
+  const applySitePreferences = () => {
+    document.documentElement.classList.toggle('emoji-loader-hide-view', Boolean(settings.hideView));
+    document.documentElement.classList.toggle('emoji-loader-darker', Boolean(settings.darker));
+  };
+  applySitePreferences();
+  const protectAssetLinks = () => {
+    if (!readCollection().length) return;
+    for (const link of document.querySelectorAll('.card-image.asset .buttons a[href], .asset-card a.fw-semibold[href]')) {
+      if (!/^\/(emoji|sticker|pack)\//.test(new URL(link.href, location.href).pathname)) continue;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+  };
   document.body.appendChild(panel);
+  updateJumpControls();
   const ensurePanel = () => {
     if (!panel.isConnected && document.body) document.body.appendChild(panel);
   };
@@ -301,6 +391,7 @@
       count.style.display = items.length ? '' : 'none';
     }
     collectionSection.hidden = !items.length;
+    if (items.length) protectAssetLinks();
     panel.hidden = !hasLoader && !items.length;
     message.hidden = !hasLoader;
     controls.hidden = !hasLoader;
@@ -358,6 +449,12 @@
   };
   window.addEventListener('storage', event => {
     if (event.key === COLLECTION_STORAGE_KEY || event.key === null) refreshCollection(true);
+    if (event.key === settingKey) {
+      try { settings = { ...settings, ...JSON.parse(event.newValue || '{}') }; } catch { /* Keep current settings. */ }
+      hideViewInput.checked = Boolean(settings.hideView);
+      darkerInput.checked = Boolean(settings.darker);
+      applySitePreferences();
+    }
   });
   window.addEventListener('focus', () => refreshCollection(true));
   collectionToggle.addEventListener('click', () => {
@@ -475,6 +572,9 @@
   };
   installCollectionHooks();
   refreshCollection(true);
+  const assetGrid = document.querySelector('#items');
+  if (assetGrid) new MutationObserver(() => { if (readCollection().length) protectAssetLinks(); })
+    .observe(assetGrid, { childList: true, subtree: true });
   // Lightweight fallback for delayed site startup or older background tabs returning to focus.
   window.setInterval(() => { installCollectionHooks(); refreshCollection(); }, 1000);
 
@@ -519,7 +619,10 @@
 
   const getProfilePageUrl = page => {
     const sort = new URL(location.href).searchParams.get('sort') || 'recent';
-    return `${location.origin}${location.pathname}&page=${page}&sort=${encodeURIComponent(sort)}`;
+    const url = new URL(location.href);
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('sort', sort);
+    return url.href;
   };
   const fetchProfilePage = async page => {
     const response = await fetch(getProfilePageUrl(page), {
@@ -564,29 +667,30 @@
       document.querySelector('#pagination')?.remove();
       while (!cancelled && emptyChecks < END_CHECKS_REQUIRED) {
         const firstPage = nextProfilePage;
-        const pagesThisPass = emptyChecks === 0 ? PROFILE_PAGES_PER_BATCH : 1;
+        const likelyPages = expected ? Math.ceil(Math.max(1, expected - countCards()) / 25) + 1 : PROFILE_PAGES_PER_BATCH;
+        const pagesThisPass = emptyChecks === 0 ? Math.min(isProfilePacks ? 10 : PROFILE_PAGES_PER_BATCH, likelyPages) : 1;
         const lastPage = firstPage + pagesThisPass - 1;
         setMessage(`Fetching profile pages ${firstPage}–${lastPage} in parallel (${countCards()}${expected ? `; profile reports ${expected}` : ''} visible)…`);
         const pages = Array.from({ length: pagesThisPass }, (_, index) => firstPage + index);
         const results = await Promise.all(pages.map(fetchProfilePage));
-        const returned = results.reduce((total, result) => total + result.items.length, 0);
         const appended = appendProfileItems(results);
         const nonEmptyPages = results.filter(result => result.items.length);
-        if (returned > 0) {
+        if (appended > 0) {
           nextProfilePage = Math.max(...nonEmptyPages.map(result => result.page)) + 1;
           emptyChecks = 0;
-          setMessage(`Loaded ${appended} new items from a ${PROFILE_BATCH_SIZE}-item page batch (${countCards()} visible); continuing…`);
+          setMessage(`Loaded ${appended} new items (${countCards()} visible); continuing…`);
           continue;
         }
+        nextProfilePage = lastPage + 1;
         emptyChecks += 1;
-        setMessage(`No items returned at page ${firstPage} (${emptyChecks}/${END_CHECKS_REQUIRED}; ${countCards()} visible)`);
+        setMessage(`No new items from page ${firstPage} (${emptyChecks}/${END_CHECKS_REQUIRED}; ${countCards()} visible)`);
         await wait(PROFILE_END_CHECK_WAIT_MS);
       }
       if (!cancelled && emptyChecks >= END_CHECKS_REQUIRED) {
         window.scrollTo({ top: 0, behavior: 'auto' });
         removeDuplicateItems();
         profileComplete = true;
-        setMessage(`Loading complete (${countCards()} visible; three empty page batches confirmed)`);
+        setMessage(`Loading complete (${countCards()} visible; three page batches without new items confirmed)`);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -667,7 +771,7 @@
     }
   };
 
-  if (isProfile) {
+  if (isParallelProfile) {
     primaryButton.addEventListener('click', () => {
       if (running) {
         cancelled = true;
