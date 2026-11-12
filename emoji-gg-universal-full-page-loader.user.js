@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.1.0
+// @version      1.1.1
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -125,6 +125,8 @@
   const panel = document.createElement('div');
   panel.setAttribute('role', 'region');
   panel.setAttribute('aria-label', 'Emoji.gg full-page loader');
+  panel.style.userSelect = 'none';
+  panel.style.webkitUserSelect = 'none';
   Object.assign(panel.style, {
     position: 'fixed', right: '12px', bottom: '12px', zIndex: '2147483647',
     width: 'min(320px, calc(100vw - 24px))', boxSizing: 'border-box', padding: '12px',
@@ -379,6 +381,8 @@
       dialogStyles.textContent = 'dialog[aria-label="Submit collection"]::backdrop{background:rgba(0,0,0,.7)}';
       const bar = document.createElement('div');
       bar.style.cssText = 'height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #333';
+      bar.style.userSelect = 'none';
+      bar.style.webkitUserSelect = 'none';
       const label = document.createElement('span');
       label.textContent = 'Submit Collection (beta)';
       const close = makeButton('Close');
