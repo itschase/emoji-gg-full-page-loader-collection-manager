@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.3
+// @version      1.0.4
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -125,7 +125,7 @@
     webkitBackdropFilter: 'blur(12px) saturate(120%)'
   });
   const title = document.createElement('div');
-  title.textContent = 'Emoji.gg Loader';
+  title.textContent = 'EMOJI.GG Loader & Collection Manager';
   Object.assign(title.style, {
     marginBottom: '5px', color: 'rgba(255,255,255,.62)', font: '700 10px/1.2 system-ui,sans-serif',
     letterSpacing: '.08em', textTransform: 'uppercase'
@@ -161,9 +161,11 @@
   const collectionActions = document.createElement('div');
   collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
   const submitCollectionButton = makeButton('Submit collection ↗');
+  const inlineSubmitButton = makeButton('Submit Collection (beta)');
+  inlineSubmitButton.style.cssText = 'border:0;background:transparent;color:#aaa;font:500 12px/1.4 system-ui,sans-serif;padding:5px;cursor:pointer;text-decoration:underline';
   const exportCollectionButton = makeButton('Export ZIP');
   exportCollectionButton.title = 'Download all selected items, including collections larger than 32 items';
-  collectionActions.append(clearCollectionButton, exportCollectionButton, submitCollectionButton);
+  collectionActions.append(clearCollectionButton, exportCollectionButton, submitCollectionButton, inlineSubmitButton);
   const collectionStatus = document.createElement('div');
   collectionStatus.style.cssText = 'font-size:11px;color:rgba(255,255,255,.7);margin-top:6px';
   collectionStatus.setAttribute('aria-live', 'polite');
@@ -176,7 +178,7 @@
   title.style.marginRight = '30px';
   const minimizeButton = makeButton('›');
   minimizeButton.setAttribute('aria-controls', panelContents.id);
-  Object.assign(minimizeButton.style, { minHeight: '28px', width: '28px', padding: '0', fontSize: '20px' });
+  Object.assign(minimizeButton.style, { height: '28px', minHeight: '28px', width: '28px', padding: '0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' });
   panel.append(panelContents, minimizeButton);
   const applyMinimized = minimized => {
     panelContents.hidden = minimized;
@@ -186,7 +188,7 @@
     minimizeButton.style.position = minimized ? 'relative' : 'absolute';
     minimizeButton.style.top = minimized ? '0' : '6px';
     minimizeButton.style.right = minimized ? '0' : '6px';
-    minimizeButton.textContent = minimized ? '‹' : '›';
+    minimizeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${minimized ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'}"/></svg>`;
     minimizeButton.title = minimized ? 'Show Emoji.gg tools' : 'Minimize Emoji.gg tools';
     minimizeButton.setAttribute('aria-label', minimizeButton.title);
     minimizeButton.setAttribute('aria-expanded', String(!minimized));
@@ -308,6 +310,8 @@
       collectionPreview.append(more);
     }
     submitCollectionButton.disabled = items.length === 0 || items.length > 32;
+    inlineSubmitButton.disabled = submitCollectionButton.disabled;
+    inlineSubmitButton.style.opacity = inlineSubmitButton.disabled ? '.45' : '1';
     exportCollectionButton.disabled = items.length === 0;
     collectionStatus.textContent = items.length > 32 ? 'Reduce to 32 items before submitting.' : 'Clears automatically after a successful pack submission.';
   };
@@ -342,6 +346,57 @@
   });
   submitCollectionButton.addEventListener('click', () => {
     if (!submitCollectionButton.disabled) window.open(`${location.origin}/submit/pack`, '_blank', 'noopener');
+  });
+  let submitDialog = null;
+  inlineSubmitButton.addEventListener('click', () => {
+    if (inlineSubmitButton.disabled) return;
+    if (!submitDialog) {
+      submitDialog = document.createElement('dialog');
+      submitDialog.setAttribute('aria-label', 'Submit collection');
+      submitDialog.style.cssText = 'width:min(900px,94vw);height:min(850px,90vh);max-width:94vw;max-height:90vh;padding:0;border:1px solid #444;border-radius:12px;background:#101216;color:white;overflow:hidden';
+      const dialogStyles = document.createElement('style');
+      dialogStyles.textContent = 'dialog[aria-label="Submit collection"]::backdrop{background:rgba(0,0,0,.7)}';
+      const bar = document.createElement('div');
+      bar.style.cssText = 'height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #333';
+      const label = document.createElement('span');
+      label.textContent = 'Submit Collection (beta)';
+      const close = makeButton('Close');
+      close.addEventListener('click', () => submitDialog.close());
+      bar.append(label, close);
+      const frame = document.createElement('iframe');
+      frame.title = 'Emoji.gg collection submission';
+      frame.style.cssText = 'display:block;width:100%;height:calc(100% - 45px);border:0;background:#101216';
+      frame.addEventListener('load', () => {
+        try {
+          const doc = frame.contentDocument;
+          if (!doc?.querySelector('#submit-form')) return;
+          const style = doc.createElement('style');
+          style.textContent = 'nav,footer,.hero-search,[aria-label="Emoji.gg full-page loader"],#submit-page > ul{display:none!important} #submit-page{padding-top:12px!important}';
+          doc.head.append(style);
+          // Keep the native form, tag autocomplete, validation, and success response.
+          let pending = false;
+          doc.addEventListener('click', event => {
+            if (!event.target.closest?.('.item-submit[data-type="pack"]')) return;
+            if (pending) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+            pending = true;
+            frame.contentWindow.jQuery?.(doc).one('ajaxComplete.emojiLoaderDialog', () => { pending = false; });
+            frame.contentWindow.setTimeout(() => { pending = false; }, 15000);
+          }, true);
+        } catch { /* Leave native page messages visible if embedding is unavailable. */ }
+      });
+      frame.src = `${location.origin}/submit/pack`;
+      submitDialog.append(dialogStyles, bar, frame);
+      document.body.append(submitDialog);
+      submitDialog.addEventListener('close', () => {
+        inlineSubmitButton.focus();
+        const success = frame.contentDocument?.querySelector('#success-page');
+        if (success && frame.contentWindow.getComputedStyle(success).display !== 'none') {
+          submitDialog.remove();
+          submitDialog = null;
+        }
+      });
+    }
+    submitDialog.showModal();
   });
   // Re-read shared state before the site's delegated add/remove/submit handler runs.
   document.addEventListener('click', event => {
@@ -400,25 +455,23 @@
       && element.getAttribute('aria-disabled') !== 'true'
       && Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
 
+  const hiddenSupplement = new Map();
   const setListingSupplementHidden = hidden => {
-    const heading = [...document.querySelectorAll('h3')]
-      .find(element => element.textContent.trim() === 'Popular Categories');
-    const finalInstruction = [...document.querySelectorAll('ol.ps-4 li')]
-      .find(element => element.textContent.trim() === 'Name your emoji and click save');
-    const finalList = finalInstruction?.closest('ol');
-    if (!heading || !finalList || heading.parentElement !== finalList.parentElement) return;
-    let current = heading;
-    while (current) {
-      const next = current.nextElementSibling;
-      if (hidden) {
-        current.dataset.emojiLoaderSupplement = 'hidden';
-        current.hidden = true;
-      } else if (current.dataset.emojiLoaderSupplement === 'hidden') {
-        delete current.dataset.emojiLoaderSupplement;
-        current.hidden = false;
-      }
-      if (current === finalList) break;
-      current = next;
+    if (!hidden) {
+      for (const [element, wasHidden] of hiddenSupplement) element.hidden = wasHidden;
+      hiddenSupplement.clear();
+      return;
+    }
+    const grid = document.querySelector('#items');
+    if (!grid || !isListing) return;
+    const targets = [...grid.parentElement.querySelectorAll(':scope > .tag-row')];
+    // Inspect siblings after the grid, never its cards or pagination controls.
+    for (let element = grid.nextElementSibling; element; element = element.nextElementSibling) {
+      if (element.matches('section,h2,h3,p,ol,.tags,.psection-head') && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
+    }
+    for (const element of targets) {
+      if (!hiddenSupplement.has(element)) hiddenSupplement.set(element, element.hidden);
+      element.hidden = true;
     }
   };
 
@@ -590,7 +643,7 @@
     return;
   }
 
-  setMessageHtml('Full-page loading is off.<br>Click to load everything once.');
+  setMessage('Full-page loading is off.');
   primaryButton.addEventListener('click', () => {
     if (running) {
       cancelled = true;

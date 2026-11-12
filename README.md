@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.0.3 · License: MIT · Author: Chase (itschase)**
+**Release: 1.0.4 · License: MIT · Author: Chase (itschase)**
 
 [Install from Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager) · [Source on GitHub](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
@@ -77,6 +77,7 @@ Use **Stop full load** to pause; currently visible items remain. Selecting **Loa
 - **Clear collection:** reset the temporary selection from any Emoji.gg tab while preserving the loaded page.
 - **Export ZIP:** download the current selection from the widget, including collections larger than the 32-item submission limit.
 - **Submit in a new tab:** open the pack form without navigating away from your profile or listing. This action is disabled above 32 selected items.
+- **Submit Collection (beta):** open Emoji.gg's native pack form in a centered dialog on the current page. Its tag suggestions, validation, and success messages work inside the dialog. Close it to return to your loaded results; reopening preserves the form. After a successful submission, close the dialog; your next collection opens a fresh form.
 - **Synchronize tabs:** saved selections, counts, previews, and selected card indicators stay synchronized between participating Emoji.gg tabs in the same browser profile.
 - **Clear after success:** only confirmed successful pack submissions remove submitted items. Failed submissions retain their selection.
 - **Keep new work:** unrelated items added while a submission is pending remain available for the next pack.
