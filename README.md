@@ -4,19 +4,17 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.0.8 · License: MIT · Author: Chase (itschase)**
+**Release: 1.1.0 · License: MIT · Author: Chase (itschase)**
 
 [Install from Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager) · [Source on GitHub](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
 This is a userscript, so it requires the [Tampermonkey browser extension](https://www.tampermonkey.net/) or another compatible userscript manager. Tampermonkey is the recommended option.
 
-## Why I created it
+## Purpose
 
-I wanted to browse someone's entire emoji profile without repeatedly waiting for Emoji.gg's incremental loading or scrolling through another small section at a time. The same problem made searching for emojis and stickers tedious: finding the right image should not require repeatedly stopping to press **Load more**.
+Emoji.gg loads assets incrementally, which can interrupt browsing and make large collections time-consuming to assemble. This userscript provides optional full-page loading and a compact collection manager so users can explore complete profiles and listings, select assets, and prepare multiple packs efficiently.
 
-Full-page loading is the main purpose of this script. You choose when to expand a profile or listing, and the loader keeps requesting more available results until it confirms the end. Ordinary browsing stays lightweight until you ask for a full load.
-
-Collection management grew out of the next practical problem: after spending time loading a profile and choosing a pack, submitting it in another tab could leave the original page holding an old selection. Adding a new item could bring the previous collection back. This script synchronizes the saved collection and the site's in-memory state across tabs, so the loaded page remains useful for your next pack.
+The loader continues through available results rather than relying solely on the site's displayed count. Collection tools synchronize selections across tabs and clear successfully submitted items, allowing the loaded browsing page to remain useful for the next pack.
 
 ## Screenshots
 
@@ -30,7 +28,7 @@ The loader shows which pages are being requested, how many items are visible, an
 
 ![Widget showing Load full page, collection count, image previews, Clear collection, and Submit collection](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/assets/collection-widget-1.0.png)
 
-Loading and collection controls share a small, translucent black panel. Collection controls appear only when you have selected items. Click the collection heading to expand previews; hover over a preview to reveal its remove button.
+Loading and collection controls share a small, translucent black panel with subdued buttons and consistent SVG icons. Collection controls appear only when you have selected items. Click the collection heading to expand previews; hover over a preview to reveal its remove button.
 
 ## Fast full-page loading
 
@@ -88,7 +86,7 @@ Use **Stop full load** to pause; currently visible items remain. Selecting **Loa
 2. Add emojis using Emoji.gg's normal collection buttons.
 3. Review the count and previews. Expand the heading to inspect the full selection.
 4. Hover over a preview and click **×** to remove unwanted items. Other tabs and selected indicators update too.
-5. Select **Submit collection ↗** to open the pack form in a new tab.
+5. Select **Submit collection** to open the pack form in a new tab, or **Submit Collection (beta)** to use the centered dialog in the same tab.
 6. Fill in the title, tags, and description, review the pack, and submit it yourself.
 7. Wait for Emoji.gg's successful-submission confirmation. Submitted items clear from shared storage and cached selections across participating tabs.
 8. Return to the original loaded page and select the next pack. No profile reload is needed for this collection cycle.
@@ -123,22 +121,6 @@ The script runs only on `https://emoji.gg/*`. It uses `@grant none`, adds no ext
 - Add items with Emoji.gg's normal collection button. The widget then shows the count, previews, ZIP export, clear, and pack-submission controls.
 - Use **›** to minimize the widget to the right edge and **‹** to reopen it. The preference is remembered.
 
-### Automatic updates
-
-Greasy Fork is the recommended installation source. When a new release is pushed to this GitHub repository, a signed GitHub webhook automatically tells Greasy Fork to synchronize the updated userscript and README. Tampermonkey then retrieves the newer Greasy Fork version during its normal automatic update checks. Updates are therefore delivered without reinstalling the script, although the exact check time is controlled by Tampermonkey and may not be immediate.
-
-Each code release increases the userscript's `@version`, allowing Tampermonkey to recognize it as newer. After an update is installed, reload any Emoji.gg tabs that were already open so they begin running the updated version.
-
-Advanced users can instead install the [raw GitHub userscript](https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js). That copy uses the repository's direct `@updateURL` and `@downloadURL`; the normal Greasy Fork installer uses Greasy Fork's update service, which is kept current from the same GitHub source.
-
-### Migration from Universal Full Page Loader
-
-This is **1.0 of the renamed project**, combining the full-page loader and collection manager developed under **Emoji.gg Universal Full Page Loader**.
-
-The old project reached versions above 1.0. A userscript manager may refuse to treat this release as an upgrade or may install it alongside the differently named script. Install this renamed script explicitly and disable or remove the old installation so only one copy runs. Confirm the new update URLs use `emoji-gg-full-page-loader-collection-manager`.
-
-Your saved Emoji.gg collection is not intentionally cleared merely by installing the script. Reload existing Emoji.gg tabs once after replacing the old installation. Future collection cycles can keep the profile loaded.
-
 ## Supported pages
 
 | Page | Loading | Collection controls |
@@ -161,13 +143,11 @@ Your saved Emoji.gg collection is not intentionally cleared merely by installing
 - **Two widgets appear:** disable the old script or another duplicate installation and reload once.
 - **Submit collection is disabled:** reduce the selection to 32 items or fewer.
 - **Submission failed:** review Emoji.gg's message and correct the pack. Selections remain available for another attempt.
-- **The manager keeps an older version:** check update settings or explicitly install the new GitHub script. The version reset can require manual migration.
 
 ## Performance and compatibility
 
 Loading hundreds or thousands of image cards uses more memory than Emoji.gg's initial view. Full loading stays optional; cancel if the page becomes too heavy. Parallel requests reduce waiting, but actual speed depends on the server, connection, and browser.
 
-The script targets modern Chromium and Firefox browsers with a compatible userscript manager. It uses `fetch`, `AbortController`, `DOMParser`, browser storage, optional chaining, and CSS `:has()`. `BroadcastChannel` is used where available, with storage events and focus synchronization as additional paths. Site markup and request behavior can change; loading and success detection depend on those interfaces remaining compatible.
 
 ## Privacy
 

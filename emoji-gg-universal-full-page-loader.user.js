@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.8
+// @version      1.1.0
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -106,12 +106,21 @@
     button.textContent = label;
     Object.assign(button.style, {
       minHeight: '32px', padding: '7px 12px', border: '1px solid rgba(255,255,255,.16)',
-      borderRadius: '7px', background: 'rgba(255,255,255,.12)', color: '#fff',
+      borderRadius: '7px', background: '#111214', color: '#ddd',
       font: '600 12px/1 system-ui,sans-serif', cursor: 'pointer', transition: 'background .15s ease'
     });
-    button.addEventListener('mouseenter', () => { if (!textOnly) button.style.background = 'rgba(255,255,255,.2)'; });
-    button.addEventListener('mouseleave', () => { if (!textOnly) button.style.background = 'rgba(255,255,255,.12)'; });
+    button.addEventListener('mouseenter', () => { if (!textOnly) button.style.background = '#1b1d20'; });
+    button.addEventListener('mouseleave', () => { if (!textOnly) button.style.background = '#111214'; });
     return button;
+  };
+  const addButtonIcon = (button, path) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    for (const [key, value] of Object.entries({ width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, value);
+    const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shape.setAttribute('d', path);
+    svg.append(shape);
+    svg.style.cssText = 'vertical-align:-2px;margin-right:6px;opacity:.8;pointer-events:none';
+    button.prepend(svg);
   };
   const panel = document.createElement('div');
   panel.setAttribute('role', 'region');
@@ -137,6 +146,7 @@
   Object.assign(controls.style, { display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '7px' });
   const primaryButton = makeButton(isProfile ? 'Load full profile' : 'Load full page');
   const clearCollectionButton = makeButton('Clear collection');
+  addButtonIcon(clearCollectionButton, 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7');
   clearCollectionButton.title = 'Clear the saved collection and reset selected icons in every open Emoji.gg tab';
   if (hasLoader) controls.append(primaryButton);
   panel.append(title, message, controls);
@@ -160,15 +170,18 @@
   panel.append(previewStyles);
   const collectionActions = document.createElement('div');
   collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
-  const submitCollectionButton = makeButton('Submit collection ↗');
+  const submitCollectionButton = makeButton('Submit collection');
+  addButtonIcon(submitCollectionButton, 'M14 3h7v7M21 3l-10 10M10 3H3v18h18v-7');
   submitCollectionButton.title = 'Opens collection submission in a new tab';
-  const inlineSubmitButton = makeButton('Submit Collection (beta)', true);
+  const inlineSubmitButton = makeButton('Submit Collection (beta)');
+  addButtonIcon(inlineSubmitButton, 'M3 4h18v16H3zM3 8h18M7 6h.01M10 6h.01');
   inlineSubmitButton.title = 'Opens a submission dialog in the same tab';
-  Object.assign(inlineSubmitButton.style, { background: 'transparent', borderColor: 'transparent', color: '#bbb', lineHeight: '1.4' });
+  Object.assign(inlineSubmitButton.style, { color: '#bbb', lineHeight: '1.4' });
   const submitActions = document.createElement('div');
   submitActions.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:3px;margin-left:auto';
   submitActions.append(submitCollectionButton, inlineSubmitButton);
   const exportCollectionButton = makeButton('Export ZIP');
+  addButtonIcon(exportCollectionButton, 'M12 3v12M7 10l5 5 5-5M4 16v5h16v-5');
   exportCollectionButton.title = 'Download all selected items, including collections larger than 32 items';
   const submitRow = document.createElement('div');
   submitRow.style.cssText = 'display:flex;justify-content:flex-end;flex-basis:100%';
