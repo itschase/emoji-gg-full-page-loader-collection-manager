@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.6
+// @version      1.0.7
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -458,7 +458,11 @@
   const hiddenSupplement = new Map();
   const setListingSupplementHidden = hidden => {
     if (!hidden) {
-      for (const [element, wasHidden] of hiddenSupplement) element.hidden = wasHidden;
+      for (const [element, original] of hiddenSupplement) {
+        element.hidden = original.hidden;
+        if (original.display) element.style.setProperty('display', original.display, original.priority);
+        else element.style.removeProperty('display');
+      }
       hiddenSupplement.clear();
       return;
     }
@@ -470,8 +474,13 @@
       if (!element.matches('#pagination,.next-page,script,style,dialog') && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
     }
     for (const element of targets) {
-      if (!hiddenSupplement.has(element)) hiddenSupplement.set(element, element.hidden);
+      if (!hiddenSupplement.has(element)) hiddenSupplement.set(element, {
+        hidden: element.hidden,
+        display: element.style.getPropertyValue('display'),
+        priority: element.style.getPropertyPriority('display')
+      });
       element.hidden = true;
+      element.style.setProperty('display', 'none', 'important');
     }
   };
 
