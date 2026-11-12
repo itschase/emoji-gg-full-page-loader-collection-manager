@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.7
+// @version      1.0.8
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -100,7 +100,7 @@
     return removed;
   };
 
-  const makeButton = label => {
+  const makeButton = (label, textOnly = false) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
@@ -109,8 +109,8 @@
       borderRadius: '7px', background: 'rgba(255,255,255,.12)', color: '#fff',
       font: '600 12px/1 system-ui,sans-serif', cursor: 'pointer', transition: 'background .15s ease'
     });
-    button.addEventListener('mouseenter', () => { button.style.background = 'rgba(255,255,255,.2)'; });
-    button.addEventListener('mouseleave', () => { button.style.background = 'rgba(255,255,255,.12)'; });
+    button.addEventListener('mouseenter', () => { if (!textOnly) button.style.background = 'rgba(255,255,255,.2)'; });
+    button.addEventListener('mouseleave', () => { if (!textOnly) button.style.background = 'rgba(255,255,255,.12)'; });
     return button;
   };
   const panel = document.createElement('div');
@@ -161,11 +161,19 @@
   const collectionActions = document.createElement('div');
   collectionActions.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap';
   const submitCollectionButton = makeButton('Submit collection ↗');
-  const inlineSubmitButton = makeButton('Submit Collection (beta)');
-  inlineSubmitButton.style.cssText = 'border:0;background:transparent;color:#aaa;font:500 12px/1.4 system-ui,sans-serif;padding:5px;cursor:pointer;text-decoration:underline';
+  submitCollectionButton.title = 'Opens collection submission in a new tab';
+  const inlineSubmitButton = makeButton('Submit Collection (beta)', true);
+  inlineSubmitButton.title = 'Opens a submission dialog in the same tab';
+  Object.assign(inlineSubmitButton.style, { background: 'transparent', borderColor: 'transparent', color: '#bbb', lineHeight: '1.4' });
+  const submitActions = document.createElement('div');
+  submitActions.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:3px;margin-left:auto';
+  submitActions.append(submitCollectionButton, inlineSubmitButton);
   const exportCollectionButton = makeButton('Export ZIP');
   exportCollectionButton.title = 'Download all selected items, including collections larger than 32 items';
-  collectionActions.append(clearCollectionButton, exportCollectionButton, submitCollectionButton, inlineSubmitButton);
+  const submitRow = document.createElement('div');
+  submitRow.style.cssText = 'display:flex;justify-content:flex-end;flex-basis:100%';
+  submitRow.append(submitActions);
+  collectionActions.append(clearCollectionButton, exportCollectionButton, submitRow);
   const collectionStatus = document.createElement('div');
   collectionStatus.style.cssText = 'font-size:11px;color:rgba(255,255,255,.7);margin-top:6px';
   collectionStatus.setAttribute('aria-live', 'polite');
