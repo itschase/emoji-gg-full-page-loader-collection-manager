@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.1.1
+// @version      1.2
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -238,6 +238,14 @@
   const setMessageHtml = html => {
     ensurePanel();
     message.innerHTML = html;
+  };
+  const setMessageLines = (...lines) => {
+    ensurePanel();
+    message.replaceChildren(...lines.map(text => {
+      const line = document.createElement('div');
+      line.textContent = text;
+      return line;
+    }));
   };
 
   const emptyCollectionMarkup = () => '<div class="col-12 text-center py-4">'
@@ -583,7 +591,7 @@
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('[Emoji.gg full-page loader]', error);
-        setMessage(`Paused after an error (${countCards()} loaded). Click Load full profile to continue.`);
+        setMessageLines(`Paused after an error (${countCards()} loaded).`, 'Click Load full profile to continue.');
       }
     } finally {
       running = false;
@@ -664,7 +672,7 @@
       if (running) {
         cancelled = true;
         abortController?.abort();
-        setMessage(`Cancel load accepted (${countCards()} loaded). Click Load full profile to continue.`);
+        setMessageLines(`Cancel load accepted (${countCards()} loaded).`, 'Click Load full profile to continue.');
         return;
       }
       if (profileComplete) {
@@ -681,7 +689,7 @@
   primaryButton.addEventListener('click', () => {
     if (running) {
       cancelled = true;
-      setMessage(`Loading paused (${countCards()} loaded). Click Load full page to continue.`);
+      setMessageLines(`Loading paused (${countCards()} loaded).`, 'Click Load full page to continue.');
       return;
     }
     if (sessionStorage.getItem(LISTING_READY_KEY) === '1') {
