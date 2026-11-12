@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.0.5
+// @version      1.0.6
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -464,10 +464,10 @@
     }
     const grid = document.querySelector('#items');
     if (!grid || !isListing) return;
-    const targets = [...grid.parentElement.querySelectorAll(':scope > .tag-row')];
-    // Inspect siblings after the grid, never its cards or pagination controls.
+    const targets = [...grid.parentElement.querySelectorAll(':scope > .tag-row'), ...document.querySelectorAll('footer')];
+    // The whole area after the grid is supplemental, regardless of its labels or layout.
     for (let element = grid.nextElementSibling; element; element = element.nextElementSibling) {
-      if (element.matches('section,h2,h3,p,ol,.tags,.psection-head,.section-head,.row') && !element.matches('#pagination,.next-page') && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
+      if (!element.matches('#pagination,.next-page,script,style,dialog') && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
     }
     for (const element of targets) {
       if (!hiddenSupplement.has(element)) hiddenSupplement.set(element, element.hidden);

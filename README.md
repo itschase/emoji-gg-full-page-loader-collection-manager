@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.0.5 · License: MIT · Author: Chase (itschase)**
+**Release: 1.0.6 · License: MIT · Author: Chase (itschase)**
 
 [Install from Greasy Fork](https://greasyfork.org/en/scripts/604991-emoji-gg-full-page-loader-collection-manager) · [Source on GitHub](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager) · [Report an issue](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/issues)
 
@@ -43,7 +43,7 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **Counts are context:** the profile badge may lag behind newly published uploads. Loading continues beyond that count when additional items are returned.
 - **End verification:** after reaching the apparent end, three empty checks of the next real profile page confirm completion. New results resume loading.
 - **Listings and searches:** the homepage, emoji and sticker listings, tag searches, and categories use the site's loading controls to retrieve more results automatically during a requested full load.
-- **Results-first layout:** while a listing is fully loaded, the informational section beneath the results is hidden so the expanded emoji grid stays in focus. Stopping the load restores it.
+- **Results-first layout:** full listing loads hide the entire supplemental area after the results grid, related-tag rows, and the site footer. Loading controls remain available. Stopping the load restores the hidden content.
 - **Duplicate protection:** repeated cards are filtered when the native site loader overlaps with the userscript.
 - **Cancel and continue:** pause profile loading while retaining loaded items, then use the load control to continue.
 - **Resume without resetting:** pausing a listing and continuing no longer reloads or clears items already shown.
