@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.2 — 2026-11-12
+
+- Add full-page loading to `/packs` and pack search listings.
+- Keep card actions visible while building a collection, with an optional setting to restore hover behavior.
+- Open asset links in a new tab at click time, avoiding a full-page rewrite of loaded cards.
+- Extend the optional darker palette to navigation, footer, offcanvas, and form areas.
+- Document pack routes and settings and collapse the supported-pages table.
+- Verify route detection, repeated-page completion, promotion removal after dynamic loading, collection links, and settings with focused regression checks.
+
 ## 1.2.1 — 2026-11-12
 
 - Correct profile pagination URLs and end detection when a page repeats already loaded items.

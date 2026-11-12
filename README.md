@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.1 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.2 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 
@@ -59,8 +59,6 @@ Open the native pack form in a centered dialog to enter a name, tags, and descri
 
 </details>
 
-## Fast full-page loading
-
 <details>
 <summary><strong>Fast full-page loading</strong> — profiles, listings, searches, and packs</summary>
 
@@ -84,9 +82,11 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **End verification:** three page checks without new unique items confirm completion. New results resume loading.
 - **Listings and searches:** the homepage, emoji and sticker listings, tag searches, and categories use the site's loading controls to retrieve more results automatically during a requested full load.
 - **Profile packs:** `/user/<username>/packs` loads additional packs in parallel.
+- **Pack listings:** `/packs` and `/packs/<search-term>` use the site's loading controls.
 - **Clean search results:** marketplace product cards are removed from emoji and sticker result grids.
 - **Page navigation:** on long pages, the expanded widget offers top and bottom controls.
 - **Optional site styling:** Settings can enable a darker site palette, and can hide View buttons. Both choices are off by default.
+- **Collection controls:** once a collection contains an item, the card actions stay visible by default. This can be turned off in Settings.
 - **Results-first layout:** full listing loads hide the entire supplemental area after the results grid, related-tag rows, and the site footer. Loading controls remain available. Stopping the load restores the hidden content.
 - **Duplicate protection:** repeated cards are filtered when the native site loader overlaps with the userscript.
 - **Cancel and continue:** pause profile loading while retaining loaded items, then use the load control to continue.
@@ -118,8 +118,6 @@ Select **Load full page**. The current listing receives a one-time refresh, then
 Use **Stop full load** to pause; currently visible items remain. Selecting **Load full page** again continues from the current page without refreshing it. The initial full-load request still uses one refresh to establish a clean listing session. The script does not continuously refresh pages or automatically expand future normal visits.
 
 </details>
-
-## Collection manager
 
 <details>
 <summary><strong>Collection manager</strong> — previews, removal, ZIP export, and pack submission</summary>
@@ -186,19 +184,24 @@ The script runs only on `https://emoji.gg/*`. It uses `@grant none`, adds no ext
 - Add items with Emoji.gg's normal collection button. The widget then shows the count, previews, ZIP export, clear, and pack-submission controls.
 - Use **›** to minimize the widget to the right edge and **‹** to reopen it. The preference is remembered.
 - Open **Settings** to hide View buttons or enable darker site styling. Asset links open in a new tab while a collection is active.
+- The **Keep collection controls visible** setting exposes add and View actions on cards while you build a collection; turning it off restores the site's hover behavior.
 
-## Supported pages
+<details>
+<summary><strong>Supported pages</strong></summary>
 
 | Page | Loading | Collection controls |
 | --- | --- | --- |
 | `/user/<username>` | Load full profile | Visible when selected items exist |
 | `/user/<username>/packs` | Load full profile packs | Visible when selected items exist |
+| `/packs` and `/packs/<search-term>` | Load full page | Visible when selected items exist |
 | `/` | Load full page | Visible when selected items exist |
 | `/emojis` and `/emojis/<tag>` | Load full page | Visible when selected items exist |
 | `/stickers` and `/stickers/<tag>` | Load full page | Visible when selected items exist |
 | `/category` and subpages | Load full page | Visible when selected items exist |
 | `/submit/pack` | No loading control | Previews, removal, clear, and submission-result synchronization |
 | Other `https://emoji.gg/*` pages | No loading control | Visible when selected items exist |
+
+</details>
 
 <details>
 <summary><strong>Troubleshooting</strong></summary>

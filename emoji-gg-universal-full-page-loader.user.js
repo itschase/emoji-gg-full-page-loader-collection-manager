@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.1
+// @version      1.2.2
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -10,7 +10,7 @@
 // @downloadURL  https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js
 // @updateURL    https://raw.githubusercontent.com/itschase/emoji-gg-full-page-loader-collection-manager/main/emoji-gg-universal-full-page-loader.user.js
 // @match        https://emoji.gg/*
-// @run-at       document-idle
+// @run-at       document-end
 // @grant        none
 // ==/UserScript==
 
@@ -30,7 +30,7 @@
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isProfilePacks = /^\/user\/[^/]+\/packs\/?$/.test(location.pathname);
   const isParallelProfile = isProfile || isProfilePacks;
-  const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category)(?:\/|$)/.test(location.pathname);
+  const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category|packs)(?:\/|$)/.test(location.pathname);
   const hasLoader = isProfile || isListing;
   const isSearchListing = /^\/(emojis|stickers)(?:\/|$)/.test(location.pathname) || location.pathname === '/';
 
@@ -168,7 +168,7 @@
   settingsPanel.hidden = true;
   settingsPanel.style.cssText = 'padding:8px;margin-top:7px;border:1px solid #333;border-radius:7px;background:#0a0a0a';
   const settingKey = 'emoji-gg-widget-settings';
-  let settings = { hideView: false, darker: false };
+  let settings = { hideView: false, showCollectionActions: true, darker: false };
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch { /* Defaults remain usable. */ }
   const makeSetting = (label, key) => {
     const row = document.createElement('label');
@@ -186,6 +186,7 @@
     return input;
   };
   const hideViewInput = makeSetting('Hide View buttons', 'hideView');
+  const showActionsInput = makeSetting('Keep collection controls visible', 'showCollectionActions');
   const darkerInput = makeSetting('Darker styling', 'darker');
   const settingsHint = document.createElement('div');
   settingsHint.style.cssText = 'color:#d99;font-size:11px';
@@ -293,11 +294,21 @@
     html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/emoji/"],
     html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/sticker/"],
     html.emoji-loader-hide-view .card-image.asset .buttons a[href*="/pack/"] { display:none!important; }
+    html.emoji-loader-collection-active .card-image.asset:not(.pack) .buttons a,
+    html.emoji-loader-collection-active .card-image.asset:not(.pack) .buttons .collection {
+      opacity:1!important;transform:scale(1)!important;color:rgba(255,255,255,.9)!important;
+    }
+    html.emoji-loader-collection-active .card-image.asset:not(.pack) .ovrly { opacity:.35!important;pointer-events:none; }
     html.emoji-loader-darker body, html.emoji-loader-darker main,
-    html.emoji-loader-darker .container, html.emoji-loader-darker .scrollable { background-color:#090a0c!important;color:#e8e8e8; }
+    html.emoji-loader-darker .container, html.emoji-loader-darker .scrollable,
+    html.emoji-loader-darker nav, html.emoji-loader-darker footer,
+    html.emoji-loader-darker .offcanvas, html.emoji-loader-darker #submit-page {
+      background-color:#090a0c!important;color:#e8e8e8!important;
+    }
     html.emoji-loader-darker .card, html.emoji-loader-darker .asset-card,
     html.emoji-loader-darker .card-image, html.emoji-loader-darker .dropdown-menu,
-    html.emoji-loader-darker .modal-content { background-color:#15171a!important;color:#e8e8e8!important;border-color:#303238!important; }
+    html.emoji-loader-darker .modal-content, html.emoji-loader-darker .bg-secondary,
+    html.emoji-loader-darker .btn-secondary { background-color:#15171a!important;color:#e8e8e8!important;border-color:#303238!important; }
     html.emoji-loader-darker input, html.emoji-loader-darker select,
     html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control { background-color:#1b1d21!important;color:#f4f4f4!important;border-color:#42454b!important; }
     html.emoji-loader-darker a:not(.btn) { color:#aebaff; }
@@ -306,16 +317,9 @@
   const applySitePreferences = () => {
     document.documentElement.classList.toggle('emoji-loader-hide-view', Boolean(settings.hideView));
     document.documentElement.classList.toggle('emoji-loader-darker', Boolean(settings.darker));
+    document.documentElement.classList.toggle('emoji-loader-collection-active', Boolean(settings.showCollectionActions && localStorage.getItem(COLLECTION_STORAGE_KEY) !== '[]' && localStorage.getItem(COLLECTION_STORAGE_KEY)));
   };
   applySitePreferences();
-  const protectAssetLinks = () => {
-    if (!readCollection().length) return;
-    for (const link of document.querySelectorAll('.card-image.asset .buttons a[href], .asset-card a.fw-semibold[href]')) {
-      if (!/^\/(emoji|sticker|pack)\//.test(new URL(link.href, location.href).pathname)) continue;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-    }
-  };
   document.body.appendChild(panel);
   updateJumpControls();
   const ensurePanel = () => {
@@ -391,7 +395,7 @@
       count.style.display = items.length ? '' : 'none';
     }
     collectionSection.hidden = !items.length;
-    if (items.length) protectAssetLinks();
+    document.documentElement.classList.toggle('emoji-loader-collection-active', Boolean(items.length && settings.showCollectionActions));
     panel.hidden = !hasLoader && !items.length;
     message.hidden = !hasLoader;
     controls.hidden = !hasLoader;
@@ -452,6 +456,7 @@
     if (event.key === settingKey) {
       try { settings = { ...settings, ...JSON.parse(event.newValue || '{}') }; } catch { /* Keep current settings. */ }
       hideViewInput.checked = Boolean(settings.hideView);
+      showActionsInput.checked = Boolean(settings.showCollectionActions);
       darkerInput.checked = Boolean(settings.darker);
       applySitePreferences();
     }
@@ -530,6 +535,11 @@
   });
   // Re-read shared state before the site's delegated add/remove/submit handler runs.
   document.addEventListener('click', event => {
+    const assetLink = event.target.closest?.('.asset-card a[href]');
+    if (assetLink && readCollection().length && /^\/(emoji|sticker|pack)\//.test(new URL(assetLink.href, location.href).pathname)) {
+      assetLink.target = '_blank';
+      assetLink.rel = 'noopener noreferrer';
+    }
     if (event.target.closest?.('.collection, .remove-collection, .clear-collection, .item-submit') && window.App) {
       window.App.collection = readCollection();
     }
@@ -572,9 +582,6 @@
   };
   installCollectionHooks();
   refreshCollection(true);
-  const assetGrid = document.querySelector('#items');
-  if (assetGrid) new MutationObserver(() => { if (readCollection().length) protectAssetLinks(); })
-    .observe(assetGrid, { childList: true, subtree: true });
   // Lightweight fallback for delayed site startup or older background tabs returning to focus.
   window.setInterval(() => { installCollectionHooks(); refreshCollection(); }, 1000);
 
