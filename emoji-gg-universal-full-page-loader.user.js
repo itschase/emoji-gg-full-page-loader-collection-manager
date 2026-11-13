@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.11
+// @version      1.2.12
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -250,13 +250,25 @@
   const updateJumpControls = () => {
     const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     const position = Math.max(0, window.scrollY || window.pageYOffset || 0);
-    topButton.hidden = position <= 8;
-    bottomButton.hidden = position >= maxScroll - 8;
-    jumpControls.style.display = !panelContents.hidden && maxScroll > 8 ? 'flex' : 'none';
+    const topHidden = position <= 8;
+    const bottomHidden = position >= maxScroll - 8;
+    const display = !panelContents.hidden && maxScroll > 8 ? 'flex' : 'none';
+    if (topButton.hidden !== topHidden) topButton.hidden = topHidden;
+    if (bottomButton.hidden !== bottomHidden) bottomButton.hidden = bottomHidden;
+    if (jumpControls.style.display !== display) jumpControls.style.display = display;
+  };
+  let jumpUpdateQueued = false;
+  const scheduleJumpControls = () => {
+    if (jumpUpdateQueued) return;
+    jumpUpdateQueued = true;
+    (window.requestAnimationFrame || (callback => window.setTimeout(callback, 16)))(() => {
+      jumpUpdateQueued = false;
+      updateJumpControls();
+    });
   };
   window.addEventListener('scroll', updateJumpControls, { passive: true });
-  window.addEventListener('resize', updateJumpControls);
-  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateJumpControls).observe(document.body);
+  window.addEventListener('resize', scheduleJumpControls);
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(scheduleJumpControls).observe(document.body);
   const header = document.createElement('div');
   header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-right:28px;margin-bottom:5px;min-height:24px';
   title.style.cssText += ';margin:0;min-width:0;flex:1';

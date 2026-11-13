@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.12 — 2026-11-13
+
+- Stabilize the widget's scroll controls when Emoji.gg resizes or updates the page after load.
+- Batch resize-driven control updates into one animation frame and avoid repeated layout writes when their visibility is unchanged.
+- Preserve normal scrolling on a fresh page without starting a full load.
+
 ## 1.2.11 — 2026-11-13
 
 - Close the same-tab collection submission dialog after Emoji.gg confirms a successful pack submission.
