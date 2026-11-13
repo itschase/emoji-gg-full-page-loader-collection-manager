@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.10
+// @version      1.2.11
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -573,10 +573,33 @@
     if (!submitCollectionButton.disabled) window.open(`${location.origin}/submit/pack`, '_blank', 'noopener');
   });
   let submitDialog = null;
+  let completionToast = null;
+  let completionToastTimer = null;
+  const showCollectionCompletion = () => {
+    completionToast?.remove();
+    clearTimeout(completionToastTimer);
+    completionToast = document.createElement('button');
+    completionToast.type = 'button';
+    completionToast.textContent = 'Collection submitted successfully';
+    completionToast.title = 'Click to dismiss';
+    completionToast.setAttribute('aria-live', 'polite');
+    completionToast.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:2147483647;max-width:calc(100vw - 24px);padding:12px 18px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:rgba(0,0,0,.88);color:#fff;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.38);backdrop-filter:blur(12px);cursor:pointer';
+    const toast = completionToast;
+    const dismiss = () => {
+      clearTimeout(completionToastTimer);
+      toast.remove();
+      if (completionToast === toast) completionToast = null;
+    };
+    toast.addEventListener('click', dismiss);
+    document.body.append(toast);
+    completionToastTimer = setTimeout(dismiss, 10000);
+  };
   inlineSubmitButton.addEventListener('click', () => {
     if (inlineSubmitButton.disabled) return;
     if (!submitDialog) {
       submitDialog = document.createElement('dialog');
+      const dialog = submitDialog;
+      let submittedSuccessfully = false;
       submitDialog.setAttribute('aria-label', 'Submit collection');
       submitDialog.style.cssText = 'width:min(900px,94vw);height:min(850px,90vh);max-width:94vw;max-height:90vh;padding:0;border:1px solid #444;border-radius:12px;background:#101216;color:white;overflow:hidden';
       const dialogStyles = document.createElement('style');
@@ -609,6 +632,19 @@
             frame.contentWindow.jQuery?.(doc).one('ajaxComplete.emojiLoaderDialog', () => { pending = false; });
             frame.contentWindow.setTimeout(() => { pending = false; }, 15000);
           }, true);
+          frame.contentWindow.jQuery?.(doc)?.on('ajaxSuccess.emojiLoaderDialog', (_event, _xhr, settings, response) => {
+            if (new URL(settings.url, location.href).pathname !== '/api/submit/pack') return;
+            let result = response;
+            try { if (typeof result === 'string') result = JSON.parse(result); } catch { return; }
+            if (result?.status !== 'success' || submittedSuccessfully) return;
+            submittedSuccessfully = true;
+            // Let the site's and the userscript's success handlers clear the submitted selection first.
+            frame.contentWindow.setTimeout(() => {
+              if (submitDialog !== dialog) return;
+              if (dialog.open) dialog.close();
+              showCollectionCompletion();
+            }, 0);
+          });
         } catch { /* Leave native page messages visible if embedding is unavailable. */ }
       });
       frame.src = `${location.origin}/submit/pack`;
@@ -617,9 +653,9 @@
       submitDialog.addEventListener('close', () => {
         inlineSubmitButton.focus();
         const success = frame.contentDocument?.querySelector('#success-page');
-        if (success && frame.contentWindow.getComputedStyle(success).display !== 'none') {
-          submitDialog.remove();
-          submitDialog = null;
+        if (submittedSuccessfully || (success && frame.contentWindow.getComputedStyle(success).display !== 'none')) {
+          dialog.remove();
+          if (submitDialog === dialog) submitDialog = null;
         }
       });
     }

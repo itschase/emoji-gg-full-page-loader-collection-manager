@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.11 — 2026-11-13
+
+- Close the same-tab collection submission dialog after Emoji.gg confirms a successful pack submission.
+- Show a widget-styled completion toast at the top center of the page for ten seconds; click it to dismiss it sooner.
+- Keep the dialog open when submission fails so the form and error remain available.
+
 ## 1.2.10 — 2026-11-13
 
 - Move compact page navigation buttons beside the widget title.

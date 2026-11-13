@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.10 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.11 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 
@@ -148,7 +148,7 @@ Use **Stop full load** to pause; currently visible items remain. Selecting **Loa
 4. Hover over a preview and click **×** to remove unwanted items. Other tabs and selected indicators update too.
 5. Select **Submit collection** to open the pack form in a new tab, or **Submit Collection (beta)** to use the centered dialog in the same tab.
 6. Fill in the title, tags, and description, review the pack, and submit it yourself.
-7. Wait for Emoji.gg's successful-submission confirmation. Submitted items clear from shared storage and cached selections across participating tabs.
+7. Wait for Emoji.gg's successful-submission confirmation. Submitted items clear from shared storage and cached selections across participating tabs. After a successful same-tab submission, the dialog closes and a dismissible completion toast appears for about ten seconds.
 8. Return to the original loaded page and select the next pack. No profile reload is needed for this collection cycle.
 
 **Clear collection** also allows a manual reset. Removing a temporary selection does not delete an uploaded emoji or an already submitted pack. The script manages the workflow; it does not write pack metadata, submit packs automatically, or bypass submission limits and moderation.
