@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.5 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.6 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 

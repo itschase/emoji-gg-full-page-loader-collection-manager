@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.6 — 2026-11-12
+
+- Remove repeated profile cards that Emoji.gg appends after a completed full-profile load.
+- Keep the profile's native pagination control from returning during a running or completed full load.
+- Match the profile header to the uniform black dark-mode background.
+
 ## 1.2.5 — 2026-11-12
 
 - Make page, navigation, result cards, and form surfaces uniformly black in dark mode. Keep action buttons slightly lighter.

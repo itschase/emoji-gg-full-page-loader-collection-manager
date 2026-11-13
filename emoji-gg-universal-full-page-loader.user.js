@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.5
+// @version      1.2.6
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -39,6 +39,7 @@
   let knownIds = new Set();
   let nextProfilePage = 1;
   let profileComplete = false;
+  let profileDuplicateObserver = null;
   let timerWorker = null;
   let timerSequence = 0;
   const timerResolvers = new Map();
@@ -99,6 +100,17 @@
     }
     knownIds = seen;
     return removed;
+  };
+  const watchProfileDuplicates = () => {
+    if (profileDuplicateObserver) return;
+    const grid = document.querySelector('#items');
+    if (!grid) return;
+    profileDuplicateObserver = new MutationObserver(records => {
+      if (!records.some(record => [...record.addedNodes].some(node => node.nodeType === 1 && (node.matches?.(ITEM_SELECTOR) || node.querySelector?.(ITEM_SELECTOR))))) return;
+      removeDuplicateItems();
+      if (running || profileComplete) document.querySelector('#pagination')?.remove();
+    });
+    profileDuplicateObserver.observe(grid, { childList: true });
   };
   const removePromotionalCards = () => {
     if (!isListing) return;
@@ -322,7 +334,8 @@
     html.emoji-loader-darker body, html.emoji-loader-darker main,
     html.emoji-loader-darker #submit-page { background-color:#000!important;color:#e6e6e6!important; }
     html.emoji-loader-darker .container.content,
-    html.emoji-loader-darker .scrollable { background-color:#000!important; }
+    html.emoji-loader-darker .scrollable,
+    html.emoji-loader-darker .profile-header.bg-body { background-color:#000!important; }
     html.emoji-loader-darker nav, html.emoji-loader-darker footer,
     html.emoji-loader-darker .offcanvas { background-color:#000!important;color:#e6e6e6!important; }
     html.emoji-loader-darker .asset-card {
@@ -730,6 +743,7 @@
     cancelled = false;
     abortController = new AbortController();
     primaryButton.textContent = 'Cancel loading';
+    watchProfileDuplicates();
     rebuildKnownIds();
     try {
       const expected = getProfileExpectedCount();
