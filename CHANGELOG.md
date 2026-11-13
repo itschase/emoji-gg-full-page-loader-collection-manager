@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.5 — 2026-11-12
+
+- Make page, navigation, result cards, and form surfaces uniformly black in dark mode. Keep action buttons slightly lighter.
+- Increase contrast for the add-to-collection action, including its icon and hover state.
+- Use neutral dark buttons instead of blue accents in dark mode, and clarify the unwanted-content setting.
+
 ## 1.2.4 — 2026-11-12
 
 - Make the optional darker styling fully black with borderless asset cards, while keeping card metadata, forms, and navigation legible.

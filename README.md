@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.4 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.5 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 
@@ -87,7 +87,7 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **Page navigation:** on long pages, the expanded widget offers top and bottom controls.
 - **Optional site styling:** the small gear at the bottom left opens Settings above the widget. It can enable a restrained darker site palette and hide View buttons. Both choices are off by default.
 - **Collection controls:** once a collection contains an item, the card actions stay visible by default. This can be turned off in Settings.
-- **Results-first layout:** full listing loads hide supplemental content after the results grid, related-tag rows, and the site footer. Loading controls remain available. Stopping the load restores the hidden content. A persistent **Hide content below results** setting offers the same cleaner view without starting a load, including on profile pages.
+- **Results-first layout:** full listing loads hide supplemental content after the results grid, related-tag rows, and the site footer. Loading controls remain available. Stopping the load restores the hidden content. A persistent **Hide Unwanted Content** setting offers the same cleaner view without starting a load, including on profile pages. Promotional cards are filtered automatically.
 - **Duplicate protection:** repeated cards are filtered when the native site loader overlaps with the userscript.
 - **Cancel and continue:** pause profile loading while retaining loaded items, then use the load control to continue.
 - **Resume without resetting:** pausing a listing and continuing no longer reloads or clears items already shown.
