@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.8 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.9 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 
@@ -85,7 +85,7 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **Listings and searches:** the homepage, emoji and sticker listings, tag searches, categories, and packs fetch several pages at once when pagination links are available. Other layouts use the site's loading controls.
 - **Profile packs:** `/user/<username>/packs` loads additional packs in parallel.
 - **Pack listings:** `/packs` and `/packs/<search-term>` use parallel page fetching when pagination links are available.
-- **Clean search results:** marketplace and tool promotion cards are removed from emoji, sticker, category, and pack result grids; the homepage feature promotion is also removed.
+- **Clean search results:** marketplace and tool promotion cards are removed throughout Emoji.gg, including `/search` and results added later; the homepage feature promotion is also removed.
 - **Page navigation:** on long pages, the expanded widget offers top and bottom controls.
 - **Optional site styling:** the small gear at the bottom left opens Settings above the widget. It can enable a restrained darker site palette and hide View buttons. Both choices are off by default.
 - **Collection controls:** once a collection contains an item, the card actions stay visible by default. This can be turned off in Settings.

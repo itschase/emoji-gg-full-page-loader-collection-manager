@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.9 — 2026-11-13
+
+- Offer full-page loading on `/search`, including searches whose term is absent from the address bar.
+- Remove marketplace product cards and tool promotions across Emoji.gg pages, including results added after the initial render.
+
 ## 1.2.8 — 2026-11-12
 
 - Speed up full-page loading outside profiles by fetching eight listing pages concurrently when Emoji.gg provides pagination links.

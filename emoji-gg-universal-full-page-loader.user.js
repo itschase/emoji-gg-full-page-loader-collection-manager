@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.8
+// @version      1.2.9
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -31,7 +31,7 @@
   const isProfile = /^\/user\/[^/]+\/?$/.test(location.pathname);
   const isProfilePacks = /^\/user\/[^/]+\/packs\/?$/.test(location.pathname);
   const isParallelProfile = isProfile || isProfilePacks;
-  const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category|packs)(?:\/|$)/.test(location.pathname);
+  const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category|packs|search)(?:\/|$)/.test(location.pathname);
   const hasLoader = isProfile || isListing;
 
   let running = false;
@@ -115,23 +115,27 @@
     });
     profileDuplicateObserver.observe(grid, { childList: true });
   };
-  const removePromotionalCards = () => {
-    if (!isListing) return;
-    document.querySelectorAll('#items .item:has(.card-image.asset.product), #items .item:has(> a.tool-card)').forEach(item => item.remove());
-    if (location.pathname === '/') {
-      document.querySelectorAll('.row.g-3.mb-5.mobile-hide:has(.feature-row)').forEach(row => row.remove());
-    }
-  };
-  removePromotionalCards();
-  if (isListing) {
-    const productObserver = new MutationObserver(removePromotionalCards);
-    const watchProducts = () => {
-      const grid = document.querySelector('#items');
-      if (grid) productObserver.observe(grid, { childList: true, subtree: true });
-      else setTimeout(watchProducts, 500);
+  const PROMOTION_SELECTOR = '.card-image.asset.product, .item > a.tool-card, .feature-row';
+  const removePromotionalCards = root => {
+    const removePromotion = element => {
+      if (element.matches('.feature-row')) {
+        (element.closest('.row.g-3.mb-5.mobile-hide') || element).remove();
+      } else {
+        (element.closest('.item') || element.closest('.asset-card') || element).remove();
+      }
     };
-    watchProducts();
-  }
+    if (root.matches?.(PROMOTION_SELECTOR)) removePromotion(root);
+    root.querySelectorAll?.(PROMOTION_SELECTOR).forEach(removePromotion);
+  };
+  removePromotionalCards(document);
+  const productObserver = new MutationObserver(records => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType === 1) removePromotionalCards(node);
+      }
+    }
+  });
+  productObserver.observe(document.body, { childList: true, subtree: true });
 
   const makeButton = (label, textOnly = false) => {
     const button = document.createElement('button');
