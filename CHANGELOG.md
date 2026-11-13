@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.10 — 2026-11-13
+
+- Move compact page navigation buttons beside the widget title.
+- Show only the useful direction: down at the top, up at the bottom, and both between them.
+- Keep navigation available on scrollable pages as their height changes, without requiring a full load.
+
 ## 1.2.9 — 2026-11-13
 
 - Offer full-page loading on `/search`, including searches whose term is absent from the address bar.

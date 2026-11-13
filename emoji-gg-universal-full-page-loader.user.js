@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.9
+// @version      1.2.10
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -234,20 +234,34 @@
   clearCollectionButton.title = 'Clear the saved collection and reset selected icons in every open Emoji.gg tab';
   if (hasLoader) controls.append(primaryButton);
   const jumpControls = document.createElement('div');
-  jumpControls.style.cssText = 'display:none;justify-content:flex-end;gap:6px;margin-top:6px';
-  const topButton = makeButton('↑ Top');
-  const bottomButton = makeButton('↓ Bottom');
+  jumpControls.style.cssText = 'display:none;align-items:center;gap:4px;flex:none';
+  const topButton = makeButton('↑');
+  const bottomButton = makeButton('↓');
   topButton.title = 'Scroll to the top of this page';
   bottomButton.title = 'Scroll to the bottom of this page';
+  topButton.setAttribute('aria-label', 'Scroll to top');
+  bottomButton.setAttribute('aria-label', 'Scroll to bottom');
+  for (const button of [topButton, bottomButton]) {
+    Object.assign(button.style, { width: '24px', height: '24px', minHeight: '24px', padding: '0', fontSize: '15px' });
+  }
   topButton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   bottomButton.addEventListener('click', () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
   jumpControls.append(topButton, bottomButton);
   const updateJumpControls = () => {
-    jumpControls.style.display = !panelContents.hidden && document.documentElement.scrollHeight > innerHeight * 2 ? 'flex' : 'none';
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const position = Math.max(0, window.scrollY || window.pageYOffset || 0);
+    topButton.hidden = position <= 8;
+    bottomButton.hidden = position >= maxScroll - 8;
+    jumpControls.style.display = !panelContents.hidden && maxScroll > 8 ? 'flex' : 'none';
   };
   window.addEventListener('scroll', updateJumpControls, { passive: true });
   window.addEventListener('resize', updateJumpControls);
-  panel.append(title, message, controls, jumpControls);
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateJumpControls).observe(document.body);
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-right:28px;margin-bottom:5px;min-height:24px';
+  title.style.cssText += ';margin:0;min-width:0;flex:1';
+  header.append(title, jumpControls);
+  panel.append(header, message, controls);
   const collectionSection = document.createElement('section');
   collectionSection.setAttribute('aria-label', 'Saved collection');
   collectionSection.style.cssText = 'margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px';
@@ -297,8 +311,7 @@
   const minimizeKey = 'emoji-gg-widget-minimized';
   const panelContents = document.createElement('div');
   panelContents.id = 'emoji-loader-panel-contents';
-  panelContents.append(title, message, controls, jumpControls, collectionSection, footerControls, settingsPanel);
-  title.style.marginRight = '30px';
+  panelContents.append(header, message, controls, collectionSection, footerControls, settingsPanel);
   const minimizeButton = makeButton('›');
   minimizeButton.setAttribute('aria-controls', panelContents.id);
   Object.assign(minimizeButton.style, { height: '28px', minHeight: '28px', width: '28px', padding: '0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' });
