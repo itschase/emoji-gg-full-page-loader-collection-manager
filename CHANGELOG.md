@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.4 — 2026-11-12
+
+- Make the optional darker styling fully black with borderless asset cards, while keeping card metadata, forms, and navigation legible.
+- Check full-page loading on several live result types alongside the listing cleanup and persistent footer controls.
+
 ## 1.2.3 — 2026-11-12
 
 - Move Settings to a small gear beside the collection status and open its controls above the widget.

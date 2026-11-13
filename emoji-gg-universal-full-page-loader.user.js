@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.3
+// @version      1.2.4
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -315,21 +315,30 @@
     }
     html.emoji-loader-collection-active .card-image.asset:not(.pack) .ovrly { opacity:.35!important;pointer-events:none; }
     html.emoji-loader-darker body, html.emoji-loader-darker main,
-    html.emoji-loader-darker #submit-page { background-color:#0b0d11!important;color:#e2e5ea!important; }
+    html.emoji-loader-darker #submit-page { background-color:#050505!important;color:#e6e6e6!important; }
     html.emoji-loader-darker nav, html.emoji-loader-darker footer,
-    html.emoji-loader-darker .offcanvas { background-color:#101318!important;color:#e2e5ea!important; }
-    html.emoji-loader-darker .asset-card, html.emoji-loader-darker .card,
-    html.emoji-loader-darker .dropdown-menu, html.emoji-loader-darker .modal-content {
-      background-color:#141820!important;color:#e2e5ea!important;border-color:#222832!important;
+    html.emoji-loader-darker .offcanvas { background-color:#090909!important;color:#e6e6e6!important; }
+    html.emoji-loader-darker .asset-card {
+      background-color:#111!important;color:#e6e6e6!important;border:0!important;box-shadow:none!important;
     }
+    html.emoji-loader-darker .asset-card .card-image.asset { background-color:#0d0d0d!important; }
+    html.emoji-loader-darker .asset-card .card-body { background-color:#111!important; }
+    html.emoji-loader-darker .gradient-placeholder-wrapper .form-control,
+    html.emoji-loader-darker .gradient-placeholder-wrapper .input-group-text,
+    html.emoji-loader-darker .gradient-placeholder-wrapper .collection-link {
+      background:#111!important;color:#e6e6e6!important;border-color:#222!important;
+    }
+    html.emoji-loader-darker .gradient-placeholder-wrapper .placeholder-overlay-text { color:#bcbcbc!important; }
+    html.emoji-loader-darker .card:not(.asset-card), html.emoji-loader-darker .dropdown-menu,
+    html.emoji-loader-darker .modal-content { background-color:#111!important;color:#e6e6e6!important;border-color:#222!important; }
     html.emoji-loader-darker .btn-secondary, html.emoji-loader-darker .bg-secondary {
-      background-color:#1b2029!important;color:#e2e5ea!important;border-color:#2b323d!important;
+      background-color:#1b1b1b!important;color:#e6e6e6!important;border-color:#292929!important;
     }
     html.emoji-loader-darker input, html.emoji-loader-darker select,
     html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control {
-      background-color:#171c24!important;color:#f0f2f5!important;border-color:#303844!important;
+      background-color:#151515!important;color:#f2f2f2!important;border-color:#303030!important;
     }
-    html.emoji-loader-darker .text-muted { color:#aab2be!important; }
+    html.emoji-loader-darker .text-muted { color:#aaa!important; }
   `;
   document.head.append(siteStyles);
   const applySitePreferences = () => {
