@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.7
+// @version      1.2.8
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -20,6 +20,7 @@
   const CARD_SELECTOR = '.card-image.asset:not(.product)';
   const ITEM_SELECTOR = `.item:has(${CARD_SELECTOR})`;
   const PROFILE_PAGES_PER_BATCH = 20;
+  const LISTING_PAGES_PER_BATCH = 8;
   const END_CHECKS_REQUIRED = 3;
   const END_CHECK_WAIT_MS = 1400;
   const PROFILE_END_CHECK_WAIT_MS = 400;
@@ -39,6 +40,8 @@
   let knownIds = new Set();
   let nextProfilePage = 1;
   let profileComplete = false;
+  let nextListingPage = null;
+  let listingComplete = false;
   let profileDuplicateObserver = null;
   let timerWorker = null;
   let timerSequence = 0;
@@ -800,7 +803,7 @@
 
     // The site sometimes creates the button only after reaching the bottom.
     // Re-query it rather than relying on a reference captured before scrolling.
-    for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
+    for (let attempt = 0; attempt < (location.pathname === '/' ? 30 : 2) && !cancelled; attempt += 1) {
       const loadMore = findLoadMore();
       if (loadMore) {
         loadMore.scrollIntoView({ block: 'center', behavior: 'auto' });
@@ -810,6 +813,70 @@
       await wait(75);
     }
     return false;
+  };
+  const listingPageTemplate = document.querySelector('#pagination .next-page')?.href || '';
+  const listingPageMatch = listingPageTemplate.match(/([?&]page=)(\d+)/);
+  if (listingPageMatch) nextListingPage = Number(listingPageMatch[2]);
+  const getListingPageUrl = page => listingPageTemplate.replace(/([?&]page=)\d+/, (_match, prefix) => `${prefix}${page}`);
+  const fetchListingPage = async page => {
+    const response = await fetch(getListingPageUrl(page), {
+      credentials: 'same-origin', signal: abortController?.signal
+    });
+    if (!response.ok) throw new Error(`Listing page ${page} returned ${response.status}`);
+    const parsed = new DOMParser().parseFromString(await response.text(), 'text/html');
+    return { page, items: [...parsed.querySelectorAll(ITEM_SELECTOR)] };
+  };
+  const runListingParallel = async () => {
+    if (running) return;
+    running = true;
+    cancelled = false;
+    abortController = new AbortController();
+    primaryButton.textContent = 'Stop full load';
+    autoHideSupplement = true;
+    refreshSupplementVisibility();
+    watchProfileDuplicates();
+    rebuildKnownIds();
+    document.querySelector('#pagination')?.remove();
+    let emptyChecks = 0;
+    try {
+      while (!cancelled && emptyChecks < END_CHECKS_REQUIRED) {
+        const firstPage = nextListingPage;
+        const pagesThisPass = emptyChecks === 0 ? LISTING_PAGES_PER_BATCH : 1;
+        const lastPage = firstPage + pagesThisPass - 1;
+        setMessage(`Fetching listing pages ${firstPage}–${lastPage} in parallel (${countCards()} loaded)…`);
+        const pages = Array.from({ length: pagesThisPass }, (_, index) => firstPage + index);
+        const results = await Promise.all(pages.map(fetchListingPage));
+        if (cancelled) break;
+        const appended = appendProfileItems(results);
+        removeDuplicateItems();
+        nextListingPage = lastPage + 1;
+        if (appended) {
+          emptyChecks = 0;
+          setMessage(`Loaded ${appended} new items (${countCards()} visible); continuing…`);
+        } else {
+          emptyChecks += 1;
+          setMessage(`No new items from page ${firstPage} (${emptyChecks}/${END_CHECKS_REQUIRED})`);
+          await wait(250);
+        }
+      }
+      if (!cancelled && emptyChecks >= END_CHECKS_REQUIRED) {
+        listingComplete = true;
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        setMessage(`Loading complete (${countCards()} visible)`);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('[Emoji.gg full-page loader]', error);
+        setMessageLines(`Paused after an error (${countCards()} loaded).`, 'Click Load full page to continue.');
+      }
+    } finally {
+      running = false;
+      primaryButton.textContent = 'Load full page';
+      if (cancelled) {
+        autoHideSupplement = false;
+        refreshSupplementVisibility();
+      }
+    }
   };
   const waitForGrowth = async before => {
     if (countCards() > before) return true;
@@ -828,7 +895,7 @@
       wait(3000).then(() => finish(countCards() > before));
     });
   };
-  const runListing = async () => {
+  const runListingNative = async () => {
     if (running) return;
     running = true;
     cancelled = false;
@@ -865,6 +932,7 @@
       }
     }
   };
+  const runListing = () => nextListingPage !== null ? runListingParallel() : runListingNative();
 
   if (isParallelProfile) {
     primaryButton.addEventListener('click', () => {
@@ -888,7 +956,16 @@
   primaryButton.addEventListener('click', () => {
     if (running) {
       cancelled = true;
+      abortController?.abort();
       setMessageLines(`Loading paused (${countCards()} loaded).`, 'Click Load full page to continue.');
+      return;
+    }
+    if (nextListingPage !== null) {
+      if (listingComplete) {
+        nextListingPage = Number(listingPageMatch[2]);
+        listingComplete = false;
+      }
+      runListingParallel();
       return;
     }
     if (sessionStorage.getItem(LISTING_READY_KEY) === '1') {

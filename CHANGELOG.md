@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.8 — 2026-11-12
+
+- Speed up full-page loading outside profiles by fetching eight listing pages concurrently when Emoji.gg provides pagination links.
+- Remove the unnecessary wait for a Load more button on scroll-driven listings and avoid the initial reload for parallel loads.
+- Preserve page order, duplicate protection, and pause/resume behavior; retain the site's native loading path for layouts without page links.
+
 ## 1.2.7 — 2026-11-12
 
 - Extend the black theme to the hero search header, active submission tabs, promotional badges, and listing previews on asset detail pages.

@@ -4,7 +4,7 @@
 
 This userscript adds fast, optional full-page loading to Emoji.gg profiles, profile packs, emoji and sticker listings, searches, and categories. A compact collection manager lets you preview selections, remove individual items, open pack submission in another tab, and start the next collection without refreshing your browsing page.
 
-**Release: 1.2.7 · License: MIT · Author: Chase (itschase)**
+**Release: 1.2.8 · License: MIT · Author: Chase (itschase)**
 
 See the [changelog](https://github.com/itschase/emoji-gg-full-page-loader-collection-manager/blob/main/CHANGELOG.md) for release history and improvements.
 
@@ -62,7 +62,7 @@ Open the native pack form in a centered dialog to enter a name, tags, and descri
 <details>
 <summary><strong>Fast full-page loading</strong> — profiles, listings, searches, and packs</summary>
 
-Profiles fetch pages in parallel; listings use the site's loading control. Three checks without new unique items confirm the end. Loading can be paused and resumed while retaining the visible assets.
+Profiles and listings fetch pages in parallel when pagination links are available. Other listings use the site's loading control. Three checks without new unique items confirm the end. Loading can be paused and resumed while retaining the visible assets.
 
 </details>
 
@@ -80,9 +80,9 @@ Click **›** in the panel's top-right corner to minimize it into a small tab at
 - **Large parallel batches:** requests 20 profile pages together, normally up to 500 items per batch, then immediately continues with subsequent batches.
 - **Counts are context:** the profile badge may lag behind newly published uploads. Loading continues beyond that count when additional items are returned.
 - **End verification:** three page checks without new unique items confirm completion. New results resume loading.
-- **Listings and searches:** the homepage, emoji and sticker listings, tag searches, and categories use the site's loading controls to retrieve more results automatically during a requested full load.
+- **Listings and searches:** the homepage, emoji and sticker listings, tag searches, categories, and packs fetch several pages at once when pagination links are available. Other layouts use the site's loading controls.
 - **Profile packs:** `/user/<username>/packs` loads additional packs in parallel.
-- **Pack listings:** `/packs` and `/packs/<search-term>` use the site's loading controls.
+- **Pack listings:** `/packs` and `/packs/<search-term>` use parallel page fetching when pagination links are available.
 - **Clean search results:** marketplace and tool promotion cards are removed from emoji, sticker, category, and pack result grids; the homepage feature promotion is also removed.
 - **Page navigation:** on long pages, the expanded widget offers top and bottom controls.
 - **Optional site styling:** the small gear at the bottom left opens Settings above the widget. It can enable a restrained darker site palette and hide View buttons. Both choices are off by default.
@@ -113,9 +113,9 @@ Results arrive in page order, with duplicate item IDs omitted. The profile's sta
 <details>
 <summary><strong>Loading the homepage, searches, stickers, and categories</strong></summary>
 
-Select **Load full page**. The current listing receives a one-time refresh, then the script scrolls to the bottom, finds and activates **Load more**, waits for new cards, removes duplicates, and repeats until three checks find no additional items.
+Select **Load full page**. Where Emoji.gg provides page links, the script fetches eight pages in parallel, appends unique cards in page order, and continues until three checks find no additional items. Where page links are unavailable, it uses the site's loading control.
 
-Use **Stop full load** to pause; currently visible items remain. Selecting **Load full page** again continues from the current page without refreshing it. The initial full-load request still uses one refresh to establish a clean listing session. The script does not continuously refresh pages or automatically expand future normal visits.
+Use **Stop full load** to pause; currently visible items remain. Selecting **Load full page** again continues from the current page without refreshing it. The script does not continuously refresh pages or automatically expand future normal visits.
 
 </details>
 
@@ -179,7 +179,7 @@ The script runs only on `https://emoji.gg/*`. It uses `@grant none`, adds no ext
 ### Using the script
 
 - On a profile, select **Load full profile** to retrieve the available profile pages in large batches.
-- On the homepage, emoji listings, sticker listings, searches, or categories, select **Load full page** to continue activating the site's results until the end is confirmed.
+- On the homepage, emoji listings, sticker listings, searches, categories, or packs, select **Load full page** to fetch available results until the end is confirmed.
 - Use **Cancel loading** or **Stop full load** to pause without discarding results already loaded. Select the load button again to continue.
 - Add items with Emoji.gg's normal collection button. The widget then shows the count, previews, ZIP export, clear, and pack-submission controls.
 - Use **›** to minimize the widget to the right edge and **‹** to reopen it. The preference is remembered.
