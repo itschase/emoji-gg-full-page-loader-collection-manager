@@ -335,7 +335,9 @@
     html.emoji-loader-darker #submit-page { background-color:#000!important;color:#e6e6e6!important; }
     html.emoji-loader-darker .container.content,
     html.emoji-loader-darker .scrollable,
-    html.emoji-loader-darker .profile-header.bg-body { background-color:#000!important; }
+    html.emoji-loader-darker .profile-header.bg-body,
+    html.emoji-loader-darker .hero-search,
+    html.emoji-loader-darker .listing-preview { background-color:#000!important; }
     html.emoji-loader-darker nav, html.emoji-loader-darker footer,
     html.emoji-loader-darker .offcanvas { background-color:#000!important;color:#e6e6e6!important; }
     html.emoji-loader-darker .asset-card {
@@ -369,6 +371,11 @@
     }
     html.emoji-loader-darker .btn:hover, html.emoji-loader-darker .btn:focus-visible {
       background-color:#292929!important;color:#fff!important;border-color:#3a3a3a!important;
+    }
+    html.emoji-loader-darker #submit-page .nav-link.active,
+    html.emoji-loader-darker .badge.bg-primary,
+    html.emoji-loader-darker .badge.text-bg-primary {
+      background-color:#1b1b1b!important;color:#eee!important;border-color:#292929!important;
     }
     html.emoji-loader-darker input, html.emoji-loader-darker select,
     html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control {

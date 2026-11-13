@@ -4,7 +4,9 @@
 
 - Remove repeated profile cards that Emoji.gg appends after a completed full-profile load.
 - Keep the profile's native pagination control from returning during a running or completed full load.
-- Match the profile header to the uniform black dark-mode background.
+- Match the profile and search headers to the uniform black dark-mode background.
+- Replace blue active submission tabs and promotional badges with neutral dark controls.
+- Unify preview surfaces on emoji, sticker, and pack detail pages with the black theme.
 
 ## 1.2.5 — 2026-11-12
 
