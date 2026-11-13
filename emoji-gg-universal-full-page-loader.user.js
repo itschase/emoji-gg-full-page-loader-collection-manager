@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.6
+// @version      1.2.7
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT

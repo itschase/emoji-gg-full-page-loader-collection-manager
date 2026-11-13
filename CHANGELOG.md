@@ -1,12 +1,15 @@
 # Changelog
 
+## 1.2.7 — 2026-11-12
+
+- Extend the black theme to the hero search header, active submission tabs, promotional badges, and listing previews on asset detail pages.
+- Increment the userscript version so installed copies receive these theme fixes.
+
 ## 1.2.6 — 2026-11-12
 
 - Remove repeated profile cards that Emoji.gg appends after a completed full-profile load.
 - Keep the profile's native pagination control from returning during a running or completed full load.
-- Match the profile and search headers to the uniform black dark-mode background.
-- Replace blue active submission tabs and promotional badges with neutral dark controls.
-- Unify preview surfaces on emoji, sticker, and pack detail pages with the black theme.
+- Match the profile header to the uniform black dark-mode background.
 
 ## 1.2.5 — 2026-11-12
 
