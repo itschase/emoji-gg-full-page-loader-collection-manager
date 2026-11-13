@@ -59,6 +59,8 @@ Open the native pack form in a centered dialog to enter a name, tags, and descri
 
 </details>
 
+## Main Features
+
 <details>
 <summary><strong>Fast full-page loading</strong> — profiles, listings, searches, and packs</summary>
 
