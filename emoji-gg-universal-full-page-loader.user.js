@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Emoji.gg Full Page Loader & Collection Manager
 // @namespace    emoji.gg.full-page-loader
-// @version      1.2.2
+// @version      1.2.3
 // @description  Fast full-page loading for Emoji.gg profiles and listings, with previews, cross-tab collection management, and efficient pack submission.
 // @author       Chase (itschase)
 // @license      MIT
@@ -32,7 +32,6 @@
   const isParallelProfile = isProfile || isProfilePacks;
   const isListing = isProfilePacks || location.pathname === '/' || /^\/(emojis|stickers|category|packs)(?:\/|$)/.test(location.pathname);
   const hasLoader = isProfile || isListing;
-  const isSearchListing = /^\/(emojis|stickers)(?:\/|$)/.test(location.pathname) || location.pathname === '/';
 
   let running = false;
   let cancelled = false;
@@ -102,11 +101,14 @@
     return removed;
   };
   const removePromotionalCards = () => {
-    if (!isSearchListing) return;
-    document.querySelectorAll('#items .item:has(.card-image.asset.product)').forEach(item => item.remove());
+    if (!isListing) return;
+    document.querySelectorAll('#items .item:has(.card-image.asset.product), #items .item:has(> a.tool-card)').forEach(item => item.remove());
+    if (location.pathname === '/') {
+      document.querySelectorAll('.row.g-3.mb-5.mobile-hide:has(.feature-row)').forEach(row => row.remove());
+    }
   };
   removePromotionalCards();
-  if (isSearchListing) {
+  if (isListing) {
     const productObserver = new MutationObserver(removePromotionalCards);
     const watchProducts = () => {
       const grid = document.querySelector('#items');
@@ -163,12 +165,17 @@
   const controls = document.createElement('div');
   Object.assign(controls.style, { display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '7px' });
   const primaryButton = makeButton(isParallelProfile ? 'Load full profile' : 'Load full page');
-  const settingsButton = makeButton('Settings');
+  const settingsButton = makeButton('');
+  settingsButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/><path d="M19.4 13.5a7.8 7.8 0 0 0 0-3l1.7-1.3-1.7-2.9-2 .8a7.8 7.8 0 0 0-2.6-1.5l-.3-2.1h-3.4l-.3 2.1a7.8 7.8 0 0 0-2.6 1.5l-2-.8-1.7 2.9 1.7 1.3a7.8 7.8 0 0 0 0 3l-1.7 1.3 1.7 2.9 2-.8a7.8 7.8 0 0 0 2.6 1.5l.3 2.1h3.4l.3-2.1a7.8 7.8 0 0 0 2.6-1.5l2 .8 1.7-2.9-1.7-1.3Z"/></svg>';
+  settingsButton.title = 'Settings';
+  settingsButton.setAttribute('aria-label', 'Settings');
+  settingsButton.setAttribute('aria-expanded', 'false');
+  settingsButton.style.cssText = 'width:26px;height:26px;min-height:26px;padding:0;border:0;background:transparent;color:#aaa;display:inline-flex;align-items:center;justify-content:center;flex:none';
   const settingsPanel = document.createElement('div');
   settingsPanel.hidden = true;
-  settingsPanel.style.cssText = 'padding:8px;margin-top:7px;border:1px solid #333;border-radius:7px;background:#0a0a0a';
+  settingsPanel.style.cssText = 'position:absolute;bottom:42px;left:12px;right:12px;z-index:2;padding:10px;border:1px solid #333;border-radius:8px;background:#101216;box-shadow:0 8px 24px rgba(0,0,0,.6)';
   const settingKey = 'emoji-gg-widget-settings';
-  let settings = { hideView: false, showCollectionActions: true, darker: false };
+  let settings = { hideView: false, showCollectionActions: true, darker: false, hideSupplement: false };
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(settingKey) || '{}') }; } catch { /* Defaults remain usable. */ }
   const makeSetting = (label, key) => {
     const row = document.createElement('label');
@@ -181,6 +188,7 @@
       settings[key] = input.checked;
       localStorage.setItem(settingKey, JSON.stringify(settings));
       applySitePreferences();
+      refreshSupplementVisibility();
     });
     settingsPanel.append(row);
     return input;
@@ -188,16 +196,19 @@
   const hideViewInput = makeSetting('Hide View buttons', 'hideView');
   const showActionsInput = makeSetting('Keep collection controls visible', 'showCollectionActions');
   const darkerInput = makeSetting('Darker styling', 'darker');
+  const hideSupplementInput = makeSetting('Hide content below results', 'hideSupplement');
   const settingsHint = document.createElement('div');
   settingsHint.style.cssText = 'color:#d99;font-size:11px';
   settingsHint.textContent = 'Asset links open in a new tab while a collection is active.';
   settingsPanel.append(settingsHint);
-  settingsButton.addEventListener('click', () => { settingsPanel.hidden = !settingsPanel.hidden; });
+  settingsButton.addEventListener('click', () => {
+    settingsPanel.hidden = !settingsPanel.hidden;
+    settingsButton.setAttribute('aria-expanded', String(!settingsPanel.hidden));
+  });
   const clearCollectionButton = makeButton('Clear collection');
   addButtonIcon(clearCollectionButton, 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7');
   clearCollectionButton.title = 'Clear the saved collection and reset selected icons in every open Emoji.gg tab';
   if (hasLoader) controls.append(primaryButton);
-  controls.append(settingsButton);
   const jumpControls = document.createElement('div');
   jumpControls.style.cssText = 'display:none;justify-content:flex-end;gap:6px;margin-top:6px';
   const topButton = makeButton('↑ Top');
@@ -212,7 +223,7 @@
   };
   window.addEventListener('scroll', updateJumpControls, { passive: true });
   window.addEventListener('resize', updateJumpControls);
-  panel.append(title, message, controls, jumpControls, settingsPanel);
+  panel.append(title, message, controls, jumpControls);
   const collectionSection = document.createElement('section');
   collectionSection.setAttribute('aria-label', 'Saved collection');
   collectionSection.style.cssText = 'margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px';
@@ -253,12 +264,16 @@
   const collectionStatus = document.createElement('div');
   collectionStatus.style.cssText = 'font-size:11px;color:rgba(255,255,255,.7);margin-top:6px';
   collectionStatus.setAttribute('aria-live', 'polite');
-  collectionSection.append(collectionToggle, collectionPreview, collectionActions, collectionStatus);
+  collectionSection.append(collectionToggle, collectionPreview, collectionActions);
   panel.append(collectionSection);
+  const footerControls = document.createElement('div');
+  footerControls.style.cssText = 'display:flex;align-items:flex-start;gap:5px;margin-top:6px';
+  collectionStatus.style.marginTop = '4px';
+  footerControls.append(settingsButton, collectionStatus);
   const minimizeKey = 'emoji-gg-widget-minimized';
   const panelContents = document.createElement('div');
   panelContents.id = 'emoji-loader-panel-contents';
-  panelContents.append(title, message, controls, jumpControls, settingsPanel, collectionSection);
+  panelContents.append(title, message, controls, jumpControls, collectionSection, footerControls, settingsPanel);
   title.style.marginRight = '30px';
   const minimizeButton = makeButton('›');
   minimizeButton.setAttribute('aria-controls', panelContents.id);
@@ -300,18 +315,21 @@
     }
     html.emoji-loader-collection-active .card-image.asset:not(.pack) .ovrly { opacity:.35!important;pointer-events:none; }
     html.emoji-loader-darker body, html.emoji-loader-darker main,
-    html.emoji-loader-darker .container, html.emoji-loader-darker .scrollable,
+    html.emoji-loader-darker #submit-page { background-color:#0b0d11!important;color:#e2e5ea!important; }
     html.emoji-loader-darker nav, html.emoji-loader-darker footer,
-    html.emoji-loader-darker .offcanvas, html.emoji-loader-darker #submit-page {
-      background-color:#090a0c!important;color:#e8e8e8!important;
+    html.emoji-loader-darker .offcanvas { background-color:#101318!important;color:#e2e5ea!important; }
+    html.emoji-loader-darker .asset-card, html.emoji-loader-darker .card,
+    html.emoji-loader-darker .dropdown-menu, html.emoji-loader-darker .modal-content {
+      background-color:#141820!important;color:#e2e5ea!important;border-color:#222832!important;
     }
-    html.emoji-loader-darker .card, html.emoji-loader-darker .asset-card,
-    html.emoji-loader-darker .card-image, html.emoji-loader-darker .dropdown-menu,
-    html.emoji-loader-darker .modal-content, html.emoji-loader-darker .bg-secondary,
-    html.emoji-loader-darker .btn-secondary { background-color:#15171a!important;color:#e8e8e8!important;border-color:#303238!important; }
+    html.emoji-loader-darker .btn-secondary, html.emoji-loader-darker .bg-secondary {
+      background-color:#1b2029!important;color:#e2e5ea!important;border-color:#2b323d!important;
+    }
     html.emoji-loader-darker input, html.emoji-loader-darker select,
-    html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control { background-color:#1b1d21!important;color:#f4f4f4!important;border-color:#42454b!important; }
-    html.emoji-loader-darker a:not(.btn) { color:#aebaff; }
+    html.emoji-loader-darker textarea, html.emoji-loader-darker .form-control {
+      background-color:#171c24!important;color:#f0f2f5!important;border-color:#303844!important;
+    }
+    html.emoji-loader-darker .text-muted { color:#aab2be!important; }
   `;
   document.head.append(siteStyles);
   const applySitePreferences = () => {
@@ -458,7 +476,9 @@
       hideViewInput.checked = Boolean(settings.hideView);
       showActionsInput.checked = Boolean(settings.showCollectionActions);
       darkerInput.checked = Boolean(settings.darker);
+      hideSupplementInput.checked = Boolean(settings.hideSupplement);
       applySitePreferences();
+      refreshSupplementVisibility();
     }
   });
   window.addEventListener('focus', () => refreshCollection(true));
@@ -585,20 +605,13 @@
   // Lightweight fallback for delayed site startup or older background tabs returning to focus.
   window.setInterval(() => { installCollectionHooks(); refreshCollection(); }, 1000);
 
-  if (!hasLoader) {
-    return;
-  }
-
-  const findLoadMore = () => [...document.querySelectorAll('a, button')]
-    .find(element => element.textContent.trim().toLowerCase() === 'load more'
-      && !element.disabled
-      && element.getAttribute('aria-disabled') !== 'true'
-      && Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
-
   const hiddenSupplement = new Map();
-  const setListingSupplementHidden = hidden => {
-    if (!hidden) {
+  let autoHideSupplement = false;
+  const refreshSupplementVisibility = () => {
+    const hide = Boolean(settings.hideSupplement || autoHideSupplement);
+    if (!hide) {
       for (const [element, original] of hiddenSupplement) {
+        if (!element.isConnected) continue;
         element.hidden = original.hidden;
         if (original.display) element.style.setProperty('display', original.display, original.priority);
         else element.style.removeProperty('display');
@@ -606,12 +619,15 @@
       hiddenSupplement.clear();
       return;
     }
+    const targets = [...document.querySelectorAll('footer')];
     const grid = document.querySelector('#items');
-    if (!grid || !isListing) return;
-    const targets = [...grid.parentElement.querySelectorAll(':scope > .tag-row'), ...document.querySelectorAll('footer')];
-    // The whole area after the grid is supplemental, regardless of its labels or layout.
-    for (let element = grid.nextElementSibling; element; element = element.nextElementSibling) {
-      if (!element.matches('#pagination,.next-page,script,style,dialog') && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
+    if (grid && isListing) {
+      targets.push(...grid.parentElement.querySelectorAll(':scope > .tag-row'));
+      // Keep the results, pagination, and loading control visible.
+      for (let element = grid.nextElementSibling; element; element = element.nextElementSibling) {
+        if (!element.matches('#pagination,.next-page,script,style,dialog')
+          && !element.querySelector('#pagination,.next-page,.card-image.asset')) targets.push(element);
+      }
     }
     for (const element of targets) {
       if (!hiddenSupplement.has(element)) hiddenSupplement.set(element, {
@@ -623,6 +639,21 @@
       element.style.setProperty('display', 'none', 'important');
     }
   };
+  refreshSupplementVisibility();
+  const supplementObserver = new MutationObserver(() => {
+    if (settings.hideSupplement || autoHideSupplement) refreshSupplementVisibility();
+  });
+  supplementObserver.observe(document.body, { childList: true, subtree: false });
+
+  if (!hasLoader) {
+    return;
+  }
+
+  const findLoadMore = () => [...document.querySelectorAll('a, button')]
+    .find(element => element.textContent.trim().toLowerCase() === 'load more'
+      && !element.disabled
+      && element.getAttribute('aria-disabled') !== 'true'
+      && Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
 
   const getProfilePageUrl = page => {
     const sort = new URL(location.href).searchParams.get('sort') || 'recent';
@@ -749,7 +780,8 @@
     running = true;
     cancelled = false;
     primaryButton.textContent = 'Stop full load';
-    setListingSupplementHidden(true);
+    autoHideSupplement = true;
+    refreshSupplementVisibility();
     let stableChecks = 0;
     try {
       while (!cancelled && stableChecks < END_CHECKS_REQUIRED) {
@@ -774,7 +806,10 @@
     } finally {
       running = false;
       primaryButton.textContent = 'Load full page';
-      if (cancelled) setListingSupplementHidden(false);
+      if (cancelled) {
+        autoHideSupplement = false;
+        refreshSupplementVisibility();
+      }
     }
   };
 

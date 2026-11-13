@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3 — 2026-11-12
+
+- Move Settings to a small gear beside the collection status and open its controls above the widget.
+- Add a persistent control for hiding supplemental page content and the footer, independent of full-page loading.
+- Remove marketplace cards, tool promotions, and the homepage feature promotion from listings on initial display and as new results arrive.
+- Refine the optional darker palette with subtler surfaces and borders while retaining the site's primary accents.
+- Expand route and interaction regression coverage for homepage, emoji and sticker searches, categories, packs, profile pages, and submission pages.
+
 ## 1.2.2 — 2026-11-12
 
 - Add full-page loading to `/packs` and pack search listings.
